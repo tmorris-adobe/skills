@@ -1,0 +1,25 @@
+# Troubleshooting — Navigation Orchestrator
+
+| Issue | Cause | Action |
+|-------|--------|--------|
+| Sub-agent output rejected | JSON does not validate against schema | Re-run sub-agent; ensure all required fields and types match `.claude/skills/excat-navigation-orchestrator/references/*-schema.json`. Run `.claude/skills/excat-navigation-orchestrator/scripts/validate-output.js` to verify. |
+| Gate blocks progress | Missing screenshot or uncertainty | Do not proceed. Request screenshot or clarification; do not infer. |
+| Validation-agent recommends re-analysis | Mismatch in row/spacing/font/interaction/megamenu | Trigger re-analysis loop to relevant phase; do not silently adjust. |
+| Script validate-output.js fails | Output file missing or invalid JSON | Ensure sub-agent returns only the prescribed JSON shape; no prose inside the payload. |
+| How do we know critique validated? | Need proof that style loop ran | Check `style-register.json`: all components `validated`, `allValidated: true`; and `phase-5-aggregate.json` → `validationReport.styleSimilarity` (≥ 95), `validationReport.critiqueReportPath`. |
+| Style register has pending components | One or more components &lt; 95% similarity | Run combined visual critique (step 12) via nav-component-critique for each pending component; capture source + migrated screenshots, compare visually, apply CSS/JS fixes, re-score until ≥ 95%; mark validated in style-register.json. Do not proceed until all validated. |
+| Schema register has pending items | Source vs migrated schema mismatch for some component | Fix implementation or re-extract migrated structure; re-run `compare-structural-schema.js --output-register=.../schema-register.json`. Do not proceed until schema-register allValidated. |
+| Desktop renders as raw bullet lists | CSS not applied or wrong selectors | Implement full desktop styling: horizontal layout, list-style none, dropdown panels, CTA button style in blocks/header/header.css. Compare to source screenshot. |
+| Megamenu has no images | hasImages: true but images not implemented | From source, identify megamenu image URLs; download or reference them; include in megamenu content/block so dropdown shows images, not text-only. |
+| Structural similarity &lt; 95% | Migrated header structure differs from source | Re-extract from migrated page into `migrated-structural-summary.json`. Fix implementation to match source. Re-run `.claude/skills/excat-navigation-orchestrator/scripts/compare-structural-schema.js --threshold=95 --output-register=.../schema-register.json`. |
+| Nav item assumed to have no hover | Link/redirect not tested for hover | Do not assume. Test hover and click separately for every nav item; set hasHoverBehavior and hasClickBehavior in phase-2/phase-3 from evidence. |
+| nav.md written to root `/` | Wrong location | nav.md must be at `content/nav.md`, not workspace root. Move it. |
+| Images missing from nav.md | hasImages elements not downloaded | Before writing nav.md, iterate every `hasImages: true` element from phase-2/3; download each image; include in nav.md. If images are missing, go back and download. |
+| Proceeded without all registers validated | Skipped validation gate | Read style-register.json and schema-register.json. If ANY item has status=pending or lastSimilarity below 95, STOP and fix. Run pre-confirmation gate checklist before asking customer. |
+| Style register marks 70% as validated | Wrong: below 95% threshold | A component is validated ONLY at lastSimilarity >= 95. Revert status to pending; run critique again; apply fixes until 95%. |
+| Registers list only high-level groups | Missing granular items | Both registers must list EVERY individual element from phase-1/2/3: every row, every element within each row, every megamenu column, every sub-menu. Re-build registers from phase files. |
+| Hamburger → cross animation missing | Not tracked in phase-2/phase-4 | Re-analyze header: click hamburger icon, document animation type (`css-transform`, `svg-swap`, `class-toggle`), implement matching CSS transition in header.css. |
+| Unwanted overlay on megamenu | Implementation added overlay not in source | Check source site: does megamenu have backdrop/overlay? If NO, remove overlay from migrated header.css/header.js. If YES, match its opacity and color exactly. |
+| Mobile accordion not matching source | Wrong expand behavior | Re-analyze source mobile menu: is it `single-expand` (one section at a time) or `multi-expand`? Match the behavior in header.js. Check animation timing. |
+| Mobile uses accordion but source uses slide-in | EDS default accordion used | Source uses slide-in-panel (menu slides left, sub-panel enters right with back button). Do NOT use accordion expand-in-place. Implement CSS translateX sliding panels. |
+| Megamenu text/links hardcoded in JS | Content belongs in nav.md | Move ALL text content, link labels, category names, sub-menu items, and promotional copy from header.js into `content/nav.md`. header.js should only parse the nav.md DOM and build the visual presentation — never generate text. |

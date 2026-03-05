@@ -1,0 +1,131 @@
+<div><h1 id="problems-reference--schema-and-format">Problems Reference — Schema and Format</h1><blockquote>
+<p>Portable template for the problems reference file. See <code>SKILL.md</code> for full rules and workflow.</p>
+</blockquote><p>The reference file lives in the same directory as the journal (default: <code>journal/problems-reference.md</code>) so it stays portable with the project.</p></div>
+<div><h2 id="file-header-once">File header (once)</h2><pre><code class="language-markdown"># Problems Reference — [Project Name]
+
+> Referential index of problems encountered (from the project journal), their
+> resolutions, and how to avoid them. Updated by the problem tracker skill.
+
+**Source:** `journal/journal.md`
+**Last review:** [YYYY-MM-DD] (after Session [NNN])
+</code></pre></div>
+<div><h2 id="prevention-checklists-top-of-file">Prevention checklists (top of file)</h2><p>One subsection per category. Checkbox format for pre-work scanning. Each item starts with a verb, includes the specific technique, and references the problem ID.</p><pre><code class="language-markdown">## Quick Reference — Prevention Checklists
+
+### [Category Name]
+- [ ] [Verb] [specific technique/value] — [brief context] ([ID])
+- [ ] ...
+</code></pre></div>
+<div><h2 id="category-section-repeat-per-category">Category section (repeat per category)</h2><p>Each category gets a table with all problems in that category, plus annotations.</p><pre><code class="language-markdown">## [Category Name]
+
+| Problem | ID | Cause | Resolution | How to avoid | Sessions | Severity | Resolved? |
+|---------|----|-------|------------|--------------|----------|----------|-----------|
+| [Short desc] | [DA-001] | [What caused it] | [How fixed] | [Concrete guidance] | [001, 003] | [blocker/major/minor] | [yes/no/workaround] |
+
+**Recurring:** Yes/No
+**Notes:** [Optional: link to code, doc, or skill that encodes the fix]
+</code></pre></div>
+<div><h2 id="field-reference">Field reference</h2>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div class="field"><div><div>Problem</div><div>Short, normalized description</div><div>Free text (consistent wording for recurring issues)</div></div><div><div>ID</div><div>Stable identifier</div><div><code>{PREFIX}-{NNN}</code> (e.g., <code>DA-001</code>, <code>GIT-002</code>)</div></div><div><div>Cause</div><div>What led to it — root cause or context</div><div>Free text</div></div><div><div>Resolution</div><div>How it was fixed</div><div>Free text or "unresolved"</div></div><div><div>How to avoid</div><div>Actionable guidance</div><div>"Always X / never Y" format preferred</div></div><div><div>Sessions</div><div>Where this appeared</div><div>Comma-separated session numbers (e.g., "001, 003")</div></div><div><div>Severity</div><div>Impact level</div><div><code>blocker</code> / <code>major</code> / <code>minor</code></div></div><div><div>Resolved?</div><div>Resolution status</div><div><code>yes</code> / <code>no</code> / <code>workaround</code></div></div></div><h3 id="category-prefixes">Category prefixes</h3>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div class="category"><div><div>DA / URL and path mangling</div><div><code>DA</code></div></div><div><div>Git / environment</div><div><code>GIT</code></div></div><div><div>Performance / loading</div><div><code>PERF</code></div></div><div><div>File sync / auto-generation</div><div><code>SYNC</code></div></div><div><div>Build / deployment</div><div><code>BUILD</code></div></div><div><div>Content authoring</div><div><code>AUTH</code></div></div><div><div>Block rendering</div><div><code>BLOCK</code></div></div></div><p>New categories get a short uppercase prefix on first encounter.</p></div>
+<div><h2 id="unresolved-section-only-if-needed">Unresolved section (only if needed)</h2><pre><code class="language-markdown">## Unresolved or Workaround-Only
+
+| Problem | ID | Sessions | Current state |
+|---------|----|----------|---------------|
+| [Desc] | [ID] | [001, 003] | Workaround: [brief]. Still open: [what's left]. |
+</code></pre></div>
+<div><h2 id="example-single-category">Example (single category)</h2><pre><code class="language-markdown">## DA / URL and Path Mangling
+
+| Problem | ID | Cause | Resolution | How to avoid | Sessions | Severity | Resolved? |
+|---------|----|-------|------------|--------------|----------|----------|-----------|
+| DA converts dots to hyphens in hrefs (`.json` → `-json`) | DA-001 | DA rewrites URLs; dots in hrefs normalized to hyphens | Match links by `a.textContent.trim()`, never by `a.href` | For any link whose text is a file path: use `a.textContent.trim().endsWith('.json')` to detect; never use `a.getAttribute('href')` for paths | 001 | blocker | yes |
+| SKILL.md referenced non-existent file | DA-002 | File renamed during development; reference not updated | Updated reference to actual filename `animation-verification.md` | After renaming files, grep for all references to the old name across the project | 003 | major | yes |
+
+**Recurring:** No (so far — but both involve file reference mismatches)
+**Notes:** DA-001 documented in `skills/excat-animate-migration/SKILL.md`. Both problems stem from platforms transforming file paths/references.
+</code></pre></div>
+<div><p>Use the same format in any project; only the project name and table rows change.</p></div>

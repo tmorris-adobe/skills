@@ -1,0 +1,197 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta name="viewport" content="width=device-width, initial-scale=1"/>
+<script src="/scripts/aem.js" type="module"></script>
+<script src="/scripts/scripts.js" type="module"></script>
+<link rel="stylesheet" href="/styles/styles.css"/>
+<link rel="preload" as="font" type="font/woff2" href="/fonts/avenir/avenir_next_lt_pro_regular.woff2" crossorigin>
+<link rel="preload" as="font" type="font/woff2" href="/fonts/avenir/avenir_next_lt_pro_medium.woff2" crossorigin>
+</head>
+<body>
+<header></header>
+<main>
+<div><h2 id="name-excat-daily-status-checkupdescription-review-the-project-journal-time-tracking-and-problem-reference-to-build-context-for-a-new-session-or-day-produces-a-concise-status-briefing-covering-where-the-project-stands-what-was-done-recently-whats-pending-active-problems-and-time-invested-invoke-when-user-says-status-checkup-where-did-we-leave-off-catch-me-up-whats-the-status-daily-checkup-start-of-day-resume-session-context-whats-the-state-of-the-project-what-needs-to-be-done-or-at-the-start-of-any-new-session">name: excat-daily-status-checkup
+description: Review the project journal, time tracking, and problem reference to build context for a new session or day. Produces a concise status briefing covering where the project stands, what was done recently, what's pending, active problems, and time invested. Invoke when user says "status checkup", "where did we leave off", "catch me up", "what's the status", "daily checkup", "start of day", "resume", "session context", "what's the state of the project", "what needs to be done", or at the start of any new session.</h2><h1 id="execution-mindset">EXECUTION MINDSET</h1><p><strong>You are a PROJECT BRIEFER. Your job is to quickly synthesize all project tracking data into a clear, actionable status briefing.</strong></p><ul>
+<li>DO: Read every data source listed in the Sources table</li>
+<li>DO: Surface the most recent carry-forward and resume point prominently — <strong>these are the authoritative starting point</strong></li>
+<li>DO: Highlight unresolved problems and active blockers first</li>
+<li>DO: Keep the briefing to <strong>one screen</strong> of scannable bullets</li>
+<li>DO: End with a clear "where to begin" derived from the carry-forward and pending items</li>
+<li>DON'T: Repeat the full journal — summarize, don't transcribe</li>
+<li>DON'T: Include resolved problems unless they're relevant to pending work</li>
+<li>DON'T: Fabricate status — only report what's in the data sources</li>
+</ul><p><strong>Your output should let someone go from "I haven't looked at this project in days" to "I know exactly where we are and what to do next" in one read.</strong></p></div>
+<div><h1 id="daily-status-checkup-skill">Daily Status Checkup Skill</h1><h2 id="scope-context-building-primarily-read-only">Scope: Context Building (Primarily Read-Only)</h2><p>This skill focuses on reading and synthesizing existing project data. Its primary output is a briefing in the reply. Optionally, it can write a <code>journal/status-checkup.md</code> or <code>journal/session-context.md</code> snapshot (overwritten each run, never appended).</p><h2 id="purpose">Purpose</h2><p>Build a status briefing that re-establishes context for a new session or workday. Useful for:</p><ul>
+<li><strong>Start of day</strong> — "Where did we leave off? What should I work on?"</li>
+<li><strong>Session resumption</strong> — Context was lost (new conversation, restart, timeout)</li>
+<li><strong>Stakeholder update</strong> — Quick summary of project status for someone not involved daily</li>
+<li><strong>Pre-work scanning</strong> — Review known problems before starting a task</li>
+</ul><h2 id="when-to-use">When to Use</h2><ul>
+<li><strong>Automatically</strong> — At the start of every new conversation or session (if journal files exist)</li>
+<li><strong>On request</strong> — User asks "status", "where are we", "catch me up", "daily checkup", "what did we do last", "session context", "what's the state of the project"</li>
+<li><strong>After a gap</strong> — Any time there's been a break between sessions (hours, days, weeks)</li>
+</ul><h2 id="rules">Rules</h2><ol>
+<li>
+<p><strong>Resume Point and Carry-Forward are authoritative.</strong> The carry-forward from the most recent journal session is the canonical starting point. <code>project-context.md</code> Resume Point reinforces it. If they conflict, the journal entry is newer and wins. These are maintained by the journaling skill — trust them.</p>
+</li>
+<li>
+<p><strong>Read-only by default.</strong> This skill reads data sources and outputs in the reply. It only writes a file when explicitly requested or when the optional file-write step is enabled. Do not update journal.md, project-context.md, time-tracking.md, or problems-reference.md from this skill.</p>
+</li>
+<li>
+<p><strong>Blockers first.</strong> Unresolved problems and active blockers go at the top of the briefing, before anything else.</p>
+</li>
+<li>
+<p><strong>One screen.</strong> The briefing should fit on one screen of scannable bullets. Use bullets, not paragraphs. One line per item. If it's too long, cut the least urgent parts. Detail lives in the source files; the checkup is the index.</p>
+</li>
+<li>
+<p><strong>Suggest where to begin.</strong> End with a concrete "where to begin" action derived from the carry-forward, pending items, and project context.</p>
+</li>
+<li>
+<p><strong>No fabrication.</strong> Only report what's in the data sources. If a file is missing, say so and skip that section. Do not create the file from this skill.</p>
+</li>
+</ol><h2 id="sources">Sources</h2><p>All paths use the same journal directory as excat-journaling. Default: <code>journal/</code> at workspace root. If the project uses <code>JOURNAL_DIR</code> or <code>journal-config.yaml</code>, use that path.</p>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div class="source"><div><div>State snapshot</div><div><code>journal/project-context.md</code></div><div>Last updated, branch, overall status, What's Done, What's In Progress, What's Pending, Active Blockers, Key Files, <strong>Resume Point</strong></div></div><div><div>Session history</div><div><code>journal/journal.md</code></div><div>Last 1-2 sessions: <strong>Carry-Forward</strong> of the most recent session, outcomes, key decisions</div></div><div><div>Session index</div><div><code>journal/journal-index.md</code></div><div>Recent session numbers and one-line summaries; session count and dates</div></div><div><div>Problem reference</div><div><code>journal/problems-reference.md</code></div><div>Quick Reference / Prevention Checklists; unresolved or workaround-only items; categories and counts</div></div><div><div>Time report</div><div><code>journal/time-tracking.md</code></div><div>Project total (agent and with margin); recent daily totals (last 1-3 days)</div></div><div><div>Metrics</div><div><code>journal/metrics.md</code></div><div>Session count, success rates, problem stats</div></div><div><div>Git (optional)</div><div><code>git status</code> / <code>git branch</code></div><div>Branch, uncommitted changes, recent commits if helpful</div></div></div><h2 id="workflow">Workflow</h2><h3 id="step-1-read-the-state-snapshot">Step 1: Read the state snapshot</h3><ul>
+<li>Open <code>journal/project-context.md</code></li>
+<li>Extract: Last updated, branch, overall status, What's Done, What's In Progress, What's Pending, Active Blockers, Key Files, <strong>Resume Point</strong></li>
+<li>The Resume Point is the primary "where to begin" statement</li>
+</ul><h3 id="step-2-read-recent-journal-activity">Step 2: Read recent journal activity</h3><ul>
+<li>Open <code>journal/journal-index.md</code> for the session list</li>
+<li>Open <code>journal/journal.md</code> and find the <strong>most recent session</strong> (last <code>## Session NNN — ...</code> block)</li>
+<li>Read its <strong>Carry-Forward</strong> section — this is the session-level "where to start"</li>
+<li>Optionally read the previous session's Carry-Forward if the most recent is sparse</li>
+<li>Do not read full session bodies unless the user asks for detail — just the tail</li>
+</ul><h3 id="step-3-check-time-and-metrics">Step 3: Check time and metrics</h3><ul>
+<li>Open <code>journal/metrics.md</code> for cumulative stats (sessions, actions, success rate)</li>
+<li>Open <code>journal/time-tracking.md</code> header for project total time (agent and with margin)</li>
+<li>Note <strong>recent daily totals</strong> (e.g. yesterday and today, or last 2-3 days) so you know recent time investment</li>
+<li>Note most recent session date to gauge how long since last activity</li>
+<li>Session-level or daily-level totals are enough — no need to list every action</li>
+</ul><h3 id="step-4-check-for-open-problems">Step 4: Check for open problems</h3><ul>
+<li>Open <code>journal/problems-reference.md</code></li>
+<li><strong>Quick Reference / Prevention Checklists</strong> — summarize or list the categories and that they exist (e.g. "DA: match links by text, not href")</li>
+<li>Look for any rows where <code>Resolved?</code> is <code>no</code> or <code>workaround</code> — call out unresolved items</li>
+<li>Optionally note the number of problems and categories (e.g. "8 problems in 5 categories, 6 resolved") for a one-line health check</li>
+<li>Note total problems and resolution rate</li>
+</ul><h3 id="step-5-check-git-status-optional">Step 5: Check git status (optional)</h3><ul>
+<li>Run <code>git status</code> and <code>git branch</code> to note:
+<ul>
+<li>Current branch name</li>
+<li>Whether there are uncommitted changes</li>
+<li>Whether the branch is ahead/behind remote</li>
+</ul>
+</li>
+<li>If project-context.md lists Key Files, note them; only verify existence if the user has asked about project state in detail</li>
+<li>Skip this step if git is not available or not relevant</li>
+</ul><h3 id="step-6-build-the-briefing">Step 6: Build the briefing</h3><p>Assemble the status checkup using the format in <a href="status-checkup-format.md">status-checkup-format.md</a>. Output directly in the reply.</p><p>Sections in order (builds context before action):</p><ol>
+<li><strong>Where we stand</strong> — Overall status, what's done, in progress</li>
+<li><strong>What needs to be done</strong> — Pending items from project-context and carry-forward priorities</li>
+<li><strong>Problems to keep in mind</strong> — Category-level prevention items + unresolved problems. Skip if none.</li>
+<li><strong>Where to begin</strong> — The carry-forward from the most recent session. Single most important line.</li>
+<li><strong>Recent time</strong> — Total sessions, total time, success rate. Keep minimal (optional).</li>
+</ol><h3 id="step-7-write-snapshot-file-optional">Step 7: Write snapshot file (optional)</h3><p>If requested by the user, or if the session will involve complex multi-step work:</p><ul>
+<li>Write the briefing to <code>journal/status-checkup.md</code> or <code>journal/session-context.md</code> (overwrite, never append)</li>
+<li>This file serves as a context anchor if the conversation is lost mid-session</li>
+</ul><h2 id="when-to-run">When to Run</h2>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div class="trigger"><div><div>Start of new conversation/session</div><div>Auto-run if journal files exist</div></div><div><div>User asks "status" / "where are we" / "catch me up" / "session context"</div><div>Full briefing</div></div><div><div>User asks "what's next" / "what should we work on"</div><div>Abbreviated: where to begin + what needs to be done only</div></div><div><div>After context loss (restart, timeout)</div><div>Full briefing</div></div></div><h2 id="integration">Integration</h2><p><strong>Reads from:</strong></p><ul>
+<li><code>journal/project-context.md</code></li>
+<li><code>journal/journal.md</code> (tail only — last 1-2 sessions)</li>
+<li><code>journal/journal-index.md</code></li>
+<li><code>journal/problems-reference.md</code></li>
+<li><code>journal/time-tracking.md</code> (header + recent daily totals)</li>
+<li><code>journal/metrics.md</code></li>
+</ul><p><strong>Writes to (optional):</strong></p><ul>
+<li><code>journal/status-checkup.md</code> or <code>journal/session-context.md</code> — Overwritten each run, never appended. Only when explicitly requested or when Step 7 is enabled.</li>
+</ul><p><strong>Relationship to other skills:</strong></p><ul>
+<li>Consumes output from: journaling skill (journal.md, index, context, metrics), problem tracker (problems-reference.md), time tracking (time-tracking.md)</li>
+<li>Does not compete with or duplicate any other skill</li>
+<li>Designed to run <em>before</em> any other skill in a session — it builds the context that other skills operate within</li>
+</ul><h2 id="troubleshooting">Troubleshooting</h2><p><strong>Journal files don't exist yet:</strong></p><ul>
+<li>This is a new project. Skip the briefing and note that journaling should be initialized first.</li>
+</ul><p><strong>project-context.md is stale:</strong></p><ul>
+<li>Check journal.md for more recent sessions. The carry-forward in the last journal entry is authoritative. Note the discrepancy.</li>
+</ul><p><strong>No carry-forward in the last session:</strong></p><ul>
+<li>Use the last session's outcomes and pending items from project-context.md to suggest next steps.</li>
+</ul><p><strong>Multiple days since last session:</strong></p><ul>
+<li>Note the gap. Summarize what was happening when work stopped and what the resume point was.</li>
+</ul><p><strong>Source file missing:</strong></p><ul>
+<li>Say so and skip that section. Do not create the file from this skill.</li>
+</ul><h2 id="additional-resources">Additional Resources</h2><ul>
+<li>Briefing format: <a href="status-checkup-format.md">status-checkup-format.md</a></li>
+<li>Journal schema: <code>skills/excat-journaling/journal-format.md</code></li>
+<li>Problems schema: <code>skills/excat-problem-tracker/problems-reference-format.md</code></li>
+<li>Time report schema: <code>skills/excat-project-time-tracking/time-report-format.md</code></li>
+</ul></div>
+<div><p><em>Daily Status Checkup Skill v1.2</em></p></div>
+</main>
+<footer></footer>
+</body>
+</html>

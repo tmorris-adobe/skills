@@ -1,0 +1,238 @@
+<div><h2 id="name-excat-problem-trackerdescription-review-the-project-journal-for-problems-issues-roadblocks-and-failed-attempts-extracts-recurring-patterns-tracks-how-issues-were-resolved-and-documents-how-to-avoid-them-in-the-future-builds-a-referential-problems-reference-for-quick-lookup-invoke-when-user-says-update-problem-tracker-review-problems-analyze-problems-what-problems-have-we-seen-how-did-we-fix-x-check-knowledge-base-extract-lessons-learned-or-when-closing-a-session-that-had-problems">name: excat-problem-tracker
+description: Review the project journal for problems, issues, roadblocks, and failed attempts. Extracts recurring patterns, tracks how issues were resolved, and documents how to avoid them in the future. Builds a referential problems reference for quick lookup. Invoke when user says "update problem tracker", "review problems", "analyze problems", "what problems have we seen", "how did we fix X", "check knowledge base", "extract lessons learned", or when closing a session that had problems.</h2><h1 id="execution-mindset">EXECUTION MINDSET</h1><p><strong>You are an ANALYST. Your job is to extract patterns from raw problem data and produce a scannable, actionable reference that prevents the team from repeating mistakes.</strong></p><ul>
+<li>DO: Read every problem table in journal.md — do not skip sessions</li>
+<li>DO: Identify causes, not just symptoms</li>
+<li>DO: Write avoidance advice that is specific and actionable ("use <code>a.textContent</code>" not "be careful with links")</li>
+<li>DO: Preserve existing problem IDs and category groupings when updating</li>
+<li>DON'T: Summarize successes, actions, or time — this skill tracks <strong>problems only</strong></li>
+<li>DON'T: Invent problems that are not in the journal — only track what actually happened</li>
+<li>DON'T: Write vague avoidance advice — if you cannot name the specific technique, the advice is not useful</li>
+<li>DON'T: Duplicate the journal — the reference is analysis and synthesis, not a copy</li>
+</ul><p><strong>Your output should be a single file that a developer can search in 10 seconds to find "have we seen this before? how did we fix it? how do we avoid it?"</strong></p></div>
+<div><h1 id="problem-tracker-skill">Problem Tracker Skill</h1><h2 id="scope-problems-only">Scope: Problems Only</h2><p>This skill <strong>does not</strong> summarize actions, outcomes, or time. It focuses <strong>only</strong> on:</p><ul>
+<li><strong>Problems Encountered</strong> tables in the journal</li>
+<li>Failed attempts (actions with result = <code>fail</code>, or attempts > 1) only insofar as they relate to a recorded problem</li>
+<li>Recurring themes (same or similar problem across multiple sessions)</li>
+<li>Resolution and <strong>avoidance</strong> guidance</li>
+</ul><p>Ignore all other journal sections except to resolve session numbers or dates when citing a problem.</p><h2 id="purpose">Purpose</h2><p>Review the journal produced by the journaling skill and maintain a <strong>referential problems reference</strong> so you can look up past issues, what caused them, how they were resolved, and how to avoid them in the future. This establishes a learning loop from encountered problems.</p><p>The reference answers three questions:</p><ol>
+<li><strong>"Have we seen this problem before?"</strong> — Search by category or keyword</li>
+<li><strong>"How did we fix it last time?"</strong> — Read the Resolution column</li>
+<li><strong>"How do we avoid this in the future?"</strong> — Scan the Prevention Checklists or the "How to avoid" column</li>
+</ol><h2 id="when-to-use">When to Use</h2><ul>
+<li><strong>After sessions with problems</strong> — Update the reference with new findings</li>
+<li><strong>On request</strong> — User asks to "review problems", "update problem tracker", "what issues have we seen", "how did we fix X"</li>
+<li><strong>Before similar work</strong> — Consult the reference when starting work that might repeat past failure modes (e.g., before DA-related changes, before Lottie work, before git operations in containers)</li>
+</ul><h2 id="rules">Rules</h2><ol>
+<li>
+<p><strong>Source of truth is journal.md.</strong> The reference is derived. If they conflict, journal.md wins. Never modify journal.md from this skill.</p>
+</li>
+<li>
+<p><strong>Stable IDs.</strong> Once a problem gets an ID (e.g., <code>DA-001</code>), it keeps that ID forever. Read the existing reference before updating to preserve IDs.</p>
+</li>
+<li>
+<p><strong>Append and merge.</strong> Add new problems; merge into existing categories when it's the same or similar issue. Do not delete history. If you rename a category, keep the old session refs.</p>
+</li>
+<li>
+<p><strong>Avoidance must be actionable.</strong> Every "How to avoid" entry and every checklist item must contain a specific technique, value, or command — not generic advice.</p>
+</li>
+<li>
+<p><strong>Do not fabricate.</strong> Only track problems that appear in journal.md problem tables or <code>project-context.md</code> active blockers. Do not speculate about potential problems.</p>
+</li>
+<li>
+<p><strong>Portable.</strong> The reference lives in the same directory as the journal so it travels with the project.</p>
+</li>
+</ol><h2 id="locations">Locations</h2><ul>
+<li><strong>Journal source:</strong> Same as journaling skill. Default: <code>journal/journal.md</code> at workspace root. If the project uses <code>JOURNAL_DIR</code> or <code>journal-config.yaml</code>, use that path.</li>
+<li><strong>Reference output:</strong> Same directory as the journal. Default: <code>journal/problems-reference.md</code>.</li>
+<li><strong>Schema template:</strong> <code>skills/excat-problem-tracker/problems-reference-format.md</code></li>
+</ul><h2 id="problem-entry-schema">Problem Entry Schema</h2><p>Each problem captured in the reference has these fields:</p>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div class="field"><div><div><strong>Problem</strong></div><div>yes</div><div>Short, normalized description (use consistent wording for recurring issues)</div></div><div><div><strong>ID</strong></div><div>yes</div><div>Stable identifier: <code>{PREFIX}-{NNN}</code> (e.g., <code>DA-001</code>)</div></div><div><div><strong>Cause</strong></div><div>yes</div><div>What led to it — root cause or context</div></div><div><div><strong>Resolution</strong></div><div>yes (if resolved)</div><div>How it was fixed (from journal or concise paraphrase)</div></div><div><div><strong>How to avoid</strong></div><div>yes</div><div>Concrete, actionable guidance: checklists, patterns, "always X / never Y"</div></div><div><div><strong>Sessions</strong></div><div>yes</div><div>Session numbers where this appeared (e.g., "001, 003")</div></div><div><div><strong>Severity</strong></div><div>yes</div><div><code>blocker</code> / <code>major</code> / <code>minor</code> (from journal)</div></div><div><div><strong>Resolved?</strong></div><div>yes</div><div><code>yes</code> / <code>no</code> / <code>workaround</code></div></div></div><h3 id="category-prefixes">Category Prefixes</h3>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div class="category"><div><div>DA / URL and path mangling</div><div><code>DA</code></div></div><div><div>Git / environment</div><div><code>GIT</code></div></div><div><div>Performance / loading</div><div><code>PERF</code></div></div><div><div>File sync / auto-generation</div><div><code>SYNC</code></div></div><div><div>Build / deployment</div><div><code>BUILD</code></div></div><div><div>Content authoring</div><div><code>AUTH</code></div></div><div><div>Block rendering</div><div><code>BLOCK</code></div></div><div><div>(new categories)</div><div>Short uppercase prefix assigned on first encounter</div></div></div><p>IDs are stable — once assigned, a problem keeps its ID even if the category is renamed.</p><h2 id="workflow">Workflow</h2><h3 id="step-1-read-the-journal">Step 1: Read the journal</h3><ul>
+<li>Open <code>journal/journal.md</code> (or configured path)</li>
+<li>Locate every <code>### Problems Encountered</code> section and parse the markdown table:
+<pre><code>| Problem | Severity | Resolved? | Resolution | Related Action # |
+</code></pre>
+</li>
+<li>Note session headers (<code>## Session NNN — date — title</code>) so you can cite which session each problem came from</li>
+<li>Also check <code>project-context.md</code> for <code>## Active Blockers</code> — any blockers not yet in the reference become new unresolved problems</li>
+</ul><h3 id="step-2-extract-and-normalize">Step 2: Extract and normalize</h3><p>For each problem row, capture all schema fields. Group problems that are <strong>the same or clearly similar</strong> into one category (e.g., "DA mangles hrefs" and "DA converts dots to hyphens" → same category). Recurring problems (2+ sessions) are highest value for the reference.</p><h3 id="step-3-add-cause-and-avoidance">Step 3: Add cause and avoidance</h3><p>For each distinct problem or category:</p><ul>
+<li><strong>Cause</strong> — What led to the problem (from resolution text, session context, or inference)</li>
+<li><strong>How to avoid</strong> — Concrete, actionable guidance. If the journal implies avoidance in the resolution, extract or paraphrase it. Use "always X / never Y" format when possible.</li>
+</ul><h3 id="step-4-update-the-reference">Step 4: Update the reference</h3><p>Write or update <code>journal/problems-reference.md</code> using the schema in <a href="problems-reference-format.md">problems-reference-format.md</a>:</p><ol>
+<li><strong>Prevention Checklists</strong> at the top — one subsection per category, checkbox format for pre-work scanning</li>
+<li><strong>Problems by category</strong> — each category gets a table with all fields, plus Recurring flag and Notes</li>
+<li><strong>Unresolved / workaround-only</strong> section — only if any exist</li>
+</ol><p>Append new findings; merge new problems into existing categories when they match. Do not remove past entries.</p><h3 id="step-5-quick-lookup-on-demand">Step 5: Quick lookup (on-demand)</h3><p>When the user asks "how did we fix X?" or "have we seen this before?":</p><ol>
+<li>Read <code>journal/problems-reference.md</code></li>
+<li>Match the user's issue to a category or entry</li>
+<li>Respond with: what the problem was, how it was resolved, and how to avoid it</li>
+<li>Cite the session(s) (e.g., "See Session 001, 002 in journal")</li>
+</ol><h2 id="when-to-run">When to Run</h2>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div class="trigger"><div><div>User requests ("update problem tracker", "review problems", etc.)</div><div>Full run (steps 1–4)</div></div><div><div>Session close that had problems</div><div>Full run (steps 1–4)</div></div><div><div>Session close with no problems</div><div>Skip — no new data to process</div></div><div><div>Encountering a problem mid-session</div><div>Read-only: consult existing reference (step 5)</div></div><div><div>User asks "have we seen this?" / "how did we fix X?"</div><div>Read-only: search reference (step 5)</div></div></div><h2 id="integration-with-journaling-skill">Integration with Journaling Skill</h2><p><strong>Reads from:</strong></p><ul>
+<li><code>journal.md</code> — <code>### Problems Encountered</code> tables</li>
+<li><code>project-context.md</code> — <code>## Active Blockers</code> section</li>
+</ul><p><strong>Writes to:</strong></p><ul>
+<li><code>problems-reference.md</code> only</li>
+</ul><p><strong>No circular dependency.</strong> This skill reads from journal files but does not write to them. The journaling skill does not need to know this skill exists. They share a data directory and operate independently.</p><p><strong>Invocation sequence at session close:</strong></p><ol>
+<li>Journaling skill finalizes session entry in <code>journal.md</code></li>
+<li>Journaling skill updates <code>metrics.md</code> and <code>project-context.md</code></li>
+<li>(If session had problems) Problem tracker runs, reads updated journal, updates <code>problems-reference.md</code></li>
+</ol><h2 id="output-file-structure">Output File Structure</h2><pre><code class="language-markdown"># Problems Reference — [Project Name]
+
+> Referential index of problems encountered (from the project journal), their
+> resolutions, and how to avoid them. Updated by the problem tracker skill.
+
+**Source:** `journal/journal.md`
+**Last review:** [YYYY-MM-DD] (after Session [NNN])
+
+## Quick Reference — Prevention Checklists
+
+### [Category Name]
+- [ ] [Verb] [specific technique/value] — [brief context] ([ID])
+- [ ] ...
+
+## [Category Name]
+
+| Problem | ID | Cause | Resolution | How to avoid | Sessions | Severity | Resolved? |
+|---------|----|-------|------------|--------------|----------|----------|-----------|
+| [Short desc] | [DA-001] | [What caused it] | [How fixed] | [Concrete guidance] | [001, 003] | [blocker] | [yes] |
+
+**Recurring:** Yes/No
+**Notes:** [Optional: link to code, doc, or skill that encodes the fix]
+
+## Unresolved or Workaround-Only
+
+| Problem | ID | Sessions | Current state |
+|---------|----|----------|---------------|
+| [Desc] | [ID] | [001, 003] | Workaround: [brief]. Still open: [what's left]. |
+</code></pre><h2 id="troubleshooting">Troubleshooting</h2><p><strong>Reference seems out of date:</strong></p><ul>
+<li>Re-run the skill. It reads journal.md and merges new problems.</li>
+<li>If journal.md has been updated but the reference has not, the skill simply hasn't been invoked.</li>
+</ul><p><strong>Problem IDs changed unexpectedly:</strong></p><ul>
+<li>The skill should read the existing reference before updating. Verify step 1 is reading <code>problems-reference.md</code>.</li>
+</ul><p><strong>Category names differ from metrics.md:</strong></p><ul>
+<li>The reference may use more descriptive category names (e.g., "DA / URL and path mangling" vs. "DA compatibility"). This is fine — they serve different purposes.</li>
+</ul><p><strong>No problems to track:</strong></p><ul>
+<li>If journal.md has no problems, the reference will be minimal. This means the project is running smoothly.</li>
+</ul><h2 id="additional-resources">Additional Resources</h2><ul>
+<li>Reference file schema and example: <a href="problems-reference-format.md">problems-reference-format.md</a></li>
+<li>Journal schema (for parsing Problems tables): <code>skills/excat-journaling/journal-format.md</code></li>
+</ul></div>
+<div><p><em>Problem Tracker Skill v2.0 — Merged from excat-problem-tracker v1.0 + journal-problems-review best practices</em></p></div>

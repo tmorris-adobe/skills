@@ -1,0 +1,875 @@
+<div><h1 id="animation-import-verification--criteria-automation-and-eds-output">Animation Import Verification — Criteria, Automation, and EDS Output</h1><h2 id="purpose">Purpose</h2><p>Structured criteria and automated checks to verify that animations migrated from a source website were correctly imported and display correctly in Adobe Edge Delivery Services. Every check produces a <strong>PASS / FAIL / WARN</strong> result with evidence. All output formats are EDS-readable (metadata blocks, table blocks, JSON in metadata).</p><p>Run verifications against both the <strong>source page</strong> and the <strong>EDS page</strong> (local preview at <code>http://localhost:3000</code> or remote at <code>https://{branch}--{repo}--{owner}.aem.page/</code>).</p></div>
+<div><h2 id="verification-criteria-by-animation-pattern">1. Verification Criteria by Animation Pattern</h2><p>Criteria are organized by <strong>Pattern letter</strong> (A–G) from the animation migration skill, plus global cross-cutting checks. Each criterion has a unique <strong>ID</strong> used in EDS output and automated reports.</p><h3 id="scroll-reveal-pattern-a">1.1 Scroll-Reveal (Pattern A)</h3>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div class="criterion-id"><div><div><code>A-DOM</code></div><div>Element has EDS classes</div><div>Element has <code>.scroll-reveal</code> and receives <code>.is-visible</code> when in viewport</div></div><div><div><code>A-IO</code></div><div>IntersectionObserver active</div><div><code>initScrollReveal()</code> runs in <code>loadLazy()</code>; observer uses threshold/rootMargin that triggers on scroll</div></div><div><div><code>A-CSS</code></div><div>Initial/hidden state</div><div>Before trigger: <code>opacity: 0</code> and transform (e.g. <code>translateY(24px)</code>) applied</div></div><div><div><code>A-FINAL</code></div><div>Final/visible state</div><div>After trigger: <code>opacity: 1</code>, <code>transform: none</code> (or equivalent)</div></div><div><div><code>A-REDUCED</code></div><div>Reduced motion</div><div>With <code>prefers-reduced-motion: reduce</code>, content shows final state immediately; no transition</div></div><div><div><code>A-LCP</code></div><div>No first-section animation</div><div>First section (above-fold) does <strong>not</strong> have scroll-reveal; LCP not delayed</div></div></div><h4 id="automated-checks">Automated Checks</h4><pre><code class="language-javascript">// A-DOM + A-FINAL — Verify scroll-reveal classes and final state
+// Run on EDS page after scrolling full page
+(() => {
+  const sections = document.querySelectorAll('.scroll-reveal');
+  const results = [];
+  sections.forEach((section, i) => {
+    const style = getComputedStyle(section);
+    results.push({
+      section: i,
+      hasScrollReveal: true,
+      hasIsVisible: section.classList.contains('is-visible'),
+      opacity: style.opacity,
+      transform: style.transform,
+    });
+  });
+  return {
+    criteria: ['A-DOM', 'A-FINAL'],
+    total: sections.length,
+    triggered: results.filter(r => r.hasIsVisible).length,
+    status: results.every(r => r.hasIsVisible) ? 'PASS' : 'WARN',
+    details: results,
+  };
+})()
+</code></pre><pre><code class="language-javascript">// A-LCP — First section must NOT have scroll-reveal
+(() => {
+  const first = document.querySelector('main > .section');
+  if (!first) return { criterion: 'A-LCP', status: 'WARN', note: 'No sections found' };
+  const hasReveal = first.classList.contains('scroll-reveal');
+  return {
+    criterion: 'A-LCP',
+    status: hasReveal ? 'FAIL' : 'PASS',
+    note: hasReveal ? 'First section has scroll-reveal — will cause LCP flash' : 'First section clean',
+  };
+})()
+</code></pre><pre><code class="language-javascript">// A-REDUCED — Verify reduced-motion CSS override exists for .scroll-reveal
+(() => {
+  let hasCoverage = false;
+  for (const sheet of document.styleSheets) {
+    try {
+      for (const rule of sheet.cssRules) {
+        if (rule instanceof CSSMediaRule &#x26;&#x26; rule.conditionText?.includes('prefers-reduced-motion')) {
+          if ([...rule.cssRules].some(r => r.selectorText?.includes('scroll-reveal'))) {
+            hasCoverage = true;
+          }
+        }
+      }
+    } catch(e) {}
+  }
+  return {
+    criterion: 'A-REDUCED',
+    status: hasCoverage ? 'PASS' : 'FAIL',
+    note: hasCoverage ? 'Reduced-motion override found for .scroll-reveal' : 'Missing @media (prefers-reduced-motion) rule for .scroll-reveal',
+  };
+})()
+</code></pre><h3 id="scripted-scroll-animation-pattern-b">1.2 Scripted Scroll Animation (Pattern B)</h3>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div class="criterion-id"><div><div><code>B-IO</code></div><div>Trigger on viewport entry</div><div>Animation starts only when element enters viewport (IntersectionObserver)</div></div><div><div><code>B-rAF</code></div><div>JS animation loop</div><div>Values updated via <code>requestAnimationFrame</code>; no <code>setInterval</code> or forced sync layout</div></div><div><div><code>B-PROPS</code></div><div>Compositor-only props</div><div>Only <code>transform</code> and/or <code>opacity</code> animated (no width, height, top, left, margin, padding)</div></div><div><div><code>B-REDUCED</code></div><div>Reduced motion</div><div>Animation skipped or final state shown; <code>matchMedia('prefers-reduced-motion')</code> checked</div></div></div><h4 id="automated-check">Automated Check</h4><pre><code class="language-javascript">// B-PROPS — Check that only compositor-friendly properties are in transitions
+(() => {
+  const layoutProperties = ['width', 'height', 'top', 'left', 'right', 'bottom', 'margin', 'padding', 'border-width', 'font-size'];
+  const violations = [];
+  for (const sheet of document.styleSheets) {
+    try {
+      for (const rule of sheet.cssRules) {
+        if (rule.style?.transitionProperty) {
+          const props = rule.style.transitionProperty.split(',').map(p => p.trim());
+          const bad = props.filter(p => layoutProperties.some(lp => p.includes(lp)));
+          if (bad.length) violations.push({ selector: rule.selectorText, properties: bad });
+        }
+      }
+    } catch(e) {}
+  }
+  return {
+    criterion: 'B-PROPS',
+    status: violations.length === 0 ? 'PASS' : 'WARN',
+    violations,
+    note: violations.length === 0 ? 'Only transform/opacity animated' : `${violations.length} rule(s) animate layout properties`,
+  };
+})()
+</code></pre><h3 id="counter-pattern-c">1.3 Counter (Pattern C)</h3>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div class="criterion-id"><div><div><code>C-VALUE</code></div><div>Final value correct</div><div>Displayed end value matches source (number + suffix, e.g. <code>750+</code>)</div></div><div><div><code>C-IO</code></div><div>Triggers in viewport</div><div>Counter starts when block/section enters viewport</div></div><div><div><code>C-EASING</code></div><div>Count behavior</div><div>Count progresses with easing (e.g. ease-out cubic); no instant jump</div></div><div><div><code>C-REDUCED</code></div><div>Reduced motion</div><div>With reduced motion, final number shown immediately (not stuck at 0)</div></div><div><div><code>C-PARSE</code></div><div>Number parsing</div><div>Regex/parse correctly handles decimals, thousands separators, suffix (%, K, M, +, etc.)</div></div></div><h4 id="automated-check-1">Automated Check</h4><pre><code class="language-javascript">// C-VALUE + C-PARSE — Verify counter final values and suffix parsing
+(() => {
+  const counters = document.querySelectorAll('.counter-animate');
+  const results = [];
+  counters.forEach(el => {
+    const text = el.textContent.trim();
+    const isNumeric = /^\d/.test(text);
+    const isZero = text.startsWith('0');
+    const hasSuffix = /\d[+%KMBkmb]/.test(text);
+    results.push({
+      value: text,
+      isNumeric,
+      isZero,
+      hasSuffix,
+      status: isNumeric &#x26;&#x26; !isZero ? 'PASS' : isZero ? 'FAIL' : 'WARN',
+    });
+  });
+  return {
+    criteria: ['C-VALUE', 'C-PARSE'],
+    total: counters.length,
+    status: results.every(r => r.status === 'PASS') ? 'PASS' : 'FAIL',
+    details: results,
+  };
+})()
+</code></pre><h3 id="hover--focus-pattern-d">1.4 Hover / Focus (Pattern D)</h3>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div class="criterion-id"><div><div><code>D-HOVER</code></div><div>Hover effect visible</div><div>Transition or transform applied on <code>:hover</code> matches source intent</div></div><div><div><code>D-FOCUS</code></div><div>Focus visible</div><div><code>:focus-visible</code> styling present for keyboard navigation (functional, not decorative)</div></div><div><div><code>D-CSS</code></div><div>Transitions only</div><div>Effect uses CSS transitions (no JS required); compositor-friendly properties</div></div><div><div><code>D-REDUCED</code></div><div>Reduced motion</div><div>Hover/focus <strong>decorative transitions</strong> can be disabled; <strong><code>:focus-visible</code> outline/offset must remain</strong> for a11y</div></div></div><h3 id="page-load-entry-pattern-e">1.5 Page-Load Entry (Pattern E)</h3>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div class="criterion-id"><div><div><code>E-LOAD</code></div><div>Runs after loadLazy</div><div>Animation triggered in lazy phase (not in <code>loadEager</code>)</div></div><div><div><code>E-KEYFRAMES</code></div><div>Keyframes present</div><div><code>@keyframes</code> defined and applied via class; duration/easing match source</div></div><div><div><code>E-REDUCED</code></div><div>Reduced motion</div><div>With reduced motion, element shows final state (no animation)</div></div></div><h3 id="lottie-pattern-f">1.6 Lottie (Pattern F)</h3>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div class="criterion-id"><div><div><code>F-DELAYED</code></div><div>Load phase</div><div>Lottie loaded in <code>delayed.js</code> (<code>loadDelayed</code>), not blocking LCP</div></div><div><div><code>F-CONTAINER</code></div><div>Container and path</div><div>Element has <code>data-lottie-path</code>; path resolves to correct JSON. DA: use link <strong>text</strong> for path, not href</div></div><div><div><code>F-RENDER</code></div><div>SVG renders</div><div>After delayed load, Lottie SVG is visible with non-zero dimensions; no empty or broken container</div></div><div><div><code>F-LOOP</code></div><div>Loop/autoplay</div><div><code>data-lottie-loop</code> and autoplay behavior match source</div></div><div><div><code>F-REDUCED</code></div><div>Reduced motion</div><div>With reduced motion, animation does not play; <code>goToAndStop(0, true)</code> shows first frame</div></div><div><div><code>F-LIGHT</code></div><div>Light build</div><div>Uses <code>lottie_light.min.js</code> (not the full 3x-larger <code>lottie.min.js</code>)</div></div><div><div><code>F-ASSET</code></div><div>JSON accessible</div><div>Lottie JSON file returns HTTP 200 at expected path on remote</div></div></div><h4 id="automated-checks-1">Automated Checks</h4><pre><code class="language-javascript">// F-RENDER + F-CONTAINER — Verify Lottie SVG rendered with content
+(() => {
+  const containers = document.querySelectorAll('[data-lottie-path]');
+  const results = [];
+  containers.forEach(c => {
+    const svg = c.querySelector('svg');
+    const hasContent = svg &#x26;&#x26; svg.children.length > 0;
+    const dims = c.getBoundingClientRect();
+    results.push({
+      path: c.dataset.lottiePath,
+      loop: c.dataset.lottieLoop,
+      hasSvg: !!svg,
+      svgHasContent: hasContent,
+      width: Math.round(dims.width),
+      height: Math.round(dims.height),
+      status: hasContent &#x26;&#x26; dims.width > 0 &#x26;&#x26; dims.height > 0 ? 'PASS' : 'FAIL',
+    });
+  });
+  return {
+    criteria: ['F-RENDER', 'F-CONTAINER'],
+    total: containers.length,
+    status: results.every(r => r.status === 'PASS') ? 'PASS' : 'FAIL',
+    details: results,
+  };
+})()
+</code></pre><pre><code class="language-javascript">// F-DELAYED — Lottie should load after delay, not in &#x3C;head>
+(() => {
+  const scripts = [...document.querySelectorAll('script[src]')];
+  const lottieScript = scripts.find(s => s.src.includes('lottie'));
+  const inHead = lottieScript &#x26;&#x26; lottieScript.closest('head');
+  return {
+    criterion: 'F-DELAYED',
+    lottieLoaded: !!lottieScript,
+    inHead: !!inHead,
+    status: lottieScript &#x26;&#x26; !inHead ? 'PASS' : inHead ? 'FAIL' : 'WARN',
+    note: inHead ? 'Lottie loaded in &#x3C;head> — blocks rendering' : lottieScript ? 'Lottie loaded via delayed.js' : 'No lottie script found',
+  };
+})()
+</code></pre><pre><code class="language-javascript">// F-LIGHT — Verify lottie_light build used
+(() => {
+  const scripts = [...document.querySelectorAll('script[src]')];
+  const lottieScript = scripts.find(s => s.src.includes('lottie'));
+  if (!lottieScript) return { criterion: 'F-LIGHT', status: 'PASS', note: 'No lottie loaded' };
+  const isLight = lottieScript.src.includes('lottie_light');
+  return {
+    criterion: 'F-LIGHT',
+    status: isLight ? 'PASS' : 'WARN',
+    src: lottieScript.src,
+    note: isLight ? 'Using lottie_light.min.js' : 'Using full lottie build — consider switching to lottie_light',
+  };
+})()
+</code></pre><pre><code class="language-javascript">// F-ASSET — Verify Lottie JSON files are accessible on remote
+(async () => {
+  const containers = document.querySelectorAll('[data-lottie-path]');
+  const results = [];
+  for (const c of containers) {
+    const path = c.dataset.lottiePath;
+    const url = new URL(path, window.location.origin).href;
+    try {
+      const res = await fetch(url, { method: 'HEAD' });
+      results.push({ path, url, httpStatus: res.status, status: res.ok ? 'PASS' : 'FAIL' });
+    } catch (e) {
+      results.push({ path, url, status: 'FAIL', error: e.message });
+    }
+  }
+  return { criterion: 'F-ASSET', results };
+})()
+</code></pre><h3 id="parallax-pattern-g">1.7 Parallax (Pattern G)</h3>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div class="criterion-id"><div><div><code>G-IO</code></div><div>Active in viewport only</div><div>Parallax applied only when element is in view (<code>parallax-active</code> or similar)</div></div><div><div><code>G-rAF</code></div><div>Scroll tied to rAF</div><div>Scroll position applied via <code>requestAnimationFrame</code>; passive scroll listener</div></div><div><div><code>G-PROPS</code></div><div>Transform only</div><div>Only <code>transform: translateY(...)</code> (or equivalent) used; no layout properties</div></div><div><div><code>G-REDUCED</code></div><div>Reduced motion</div><div>Parallax disabled when <code>prefers-reduced-motion: reduce</code></div></div></div><h3 id="global--cross-cutting">1.8 Global / Cross-Cutting</h3>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div class="criterion-id"><div><div><code>GLOB-NO-LIB</code></div><div>No forbidden libs</div><div>No GSAP, anime.js, AOS, ScrollMagic, etc. in EDS code (exception: <code>lottie-web</code> in delayed)</div></div><div><div><code>GLOB-VANILLA</code></div><div>Vanilla only</div><div>No build step; ES6+ JS and plain CSS only</div></div><div><div><code>GLOB-PROGRESSIVE</code></div><div>Progressive enhancement</div><div>Content is visible and usable with animations disabled</div></div><div><div><code>GLOB-CONSOLE</code></div><div>No errors</div><div>Console free of animation-related errors on load and scroll</div></div><div><div><code>GLOB-DA</code></div><div>DA authoring integrity</div><div>Animation triggers survive Document Authoring round-trip (link text, <code>&#x3C;strong></code> tags, section metadata)</div></div></div><h4 id="automated-checks-2">Automated Checks</h4><pre><code class="language-javascript">// GLOB-NO-LIB — No banned animation libraries
+(() => {
+  const banned = ['gsap', 'greensock', 'anime.min', 'aos.js', 'scrollmagic', 'waypoints', 'scrollreveal'];
+  const scripts = [...document.querySelectorAll('script[src]')].map(s => s.src.toLowerCase());
+  const found = banned.filter(lib => scripts.some(src => src.includes(lib)));
+  return {
+    criterion: 'GLOB-NO-LIB',
+    status: found.length === 0 ? 'PASS' : 'FAIL',
+    bannedFound: found,
+    note: found.length === 0 ? 'No banned animation libraries' : `Found: ${found.join(', ')}`,
+  };
+})()
+</code></pre><pre><code class="language-javascript">// GLOB-PROGRESSIVE — No permanently hidden content
+(() => {
+  const hidden = [];
+  document.querySelectorAll('.scroll-reveal').forEach(el => {
+    const style = getComputedStyle(el);
+    if (style.opacity === '0' &#x26;&#x26; style.transitionDuration === '0s') {
+      hidden.push({ element: `${el.tagName}.${[...el.classList].join('.')}`, issue: 'opacity:0 with no transition' });
+    }
+  });
+  return {
+    criterion: 'GLOB-PROGRESSIVE',
+    status: hidden.length === 0 ? 'PASS' : 'FAIL',
+    permanentlyHidden: hidden,
+  };
+})()
+</code></pre><pre><code class="language-javascript">// GLOB-DA — Verify DA authoring integrity (run on remote .aem.page)
+(() => {
+  const results = [];
+
+  // Check Lottie links survived DA
+  document.querySelectorAll('.hero').forEach(hero => {
+    const imageCol = hero.querySelector(':scope > div > div:nth-child(2)');
+    if (!imageCol) return;
+    const lottieContainer = imageCol.querySelector('[data-lottie-path]');
+    if (lottieContainer) {
+      results.push({ check: 'Lottie link', status: 'PASS', path: lottieContainer.dataset.lottiePath });
+    } else {
+      const links = imageCol.querySelectorAll('a');
+      const jsonLink = [...links].find(a => a.textContent.trim().endsWith('.json'));
+      results.push({
+        check: 'Lottie link',
+        status: jsonLink ? 'WARN' : 'FAIL',
+        note: jsonLink ? 'Link exists but hero.js did not convert' : 'No .json link — DA may have stripped it',
+      });
+    }
+  });
+
+  // Check counter &#x3C;strong> tags survived DA
+  document.querySelectorAll('.cards.block').forEach(block => {
+    const strongs = block.querySelectorAll('strong');
+    const numericStrongs = [...strongs].filter(el => /^\d/.test(el.textContent.trim()));
+    results.push({
+      check: 'Counter strong tags',
+      status: numericStrongs.length > 0 ? 'PASS' : 'WARN',
+      found: numericStrongs.length,
+    });
+  });
+
+  // Check section metadata
+  document.querySelectorAll('.section[class*="center"]').forEach(section => {
+    results.push({ check: 'Section metadata', status: 'PASS', classes: [...section.classList] });
+  });
+
+  return {
+    criterion: 'GLOB-DA',
+    status: results.every(r => r.status === 'PASS') ? 'PASS' : results.some(r => r.status === 'FAIL') ? 'FAIL' : 'WARN',
+    details: results,
+  };
+})()
+</code></pre></div>
+<div><h2 id="visual-fidelity-verification">2. Visual Fidelity Verification</h2><p>Visual checks that cannot be fully automated — require screenshot comparison.</p><h3 id="criteria">Criteria</h3>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div class="id"><div><div><code>VIS-START</code></div><div>Animation start state matches source (before trigger)</div><div>Element position, opacity, scale match within tolerance</div><div>Visible difference in initial state</div></div><div><div><code>VIS-END</code></div><div>Animation end state matches source (after trigger)</div><div>Final visual state matches source</div><div>Different final position, opacity, or layout</div></div><div><div><code>VIS-PATH</code></div><div>Animation motion path is equivalent</div><div>Same direction (fade-up, slide-left, scale, etc.)</div><div>Different motion direction or effect type</div></div><div><div><code>VIS-LOTTIE</code></div><div>Lottie SVG renders identically to source</div><div>SVG content visible, correct aspect ratio, animating</div><div>Empty container, wrong aspect ratio, or static</div></div></div><h3 id="screenshot-comparison-process">Screenshot Comparison Process</h3><ol>
+<li><strong>Screenshot source page</strong> at key scroll positions (0%, 25%, 50%, 75%, 100%)</li>
+<li><strong>Screenshot EDS page</strong> at matching positions</li>
+<li><strong>Compare pairs</strong> — check:
+<ul>
+<li>Same elements are visible/hidden at each position</li>
+<li>Animation effects match (fade vs slide vs scale)</li>
+<li>Color, size, and position are comparable</li>
+<li>Lottie SVGs show same visual content</li>
+</ul>
+</li>
+</ol><h3 id="automated-screenshot-script">Automated Screenshot Script</h3><pre><code class="language-javascript">// Run on both source and EDS pages via Playwright
+async (page) => {
+  const positions = [0, 25, 50, 75, 100];
+  const totalHeight = await page.evaluate(() => document.body.scrollHeight - window.innerHeight);
+  for (const pct of positions) {
+    const y = Math.round((pct / 100) * totalHeight);
+    await page.evaluate((scrollY) => window.scrollTo(0, scrollY), y);
+    await page.waitForTimeout(600);
+    await page.screenshot({ path: `verify-${pct}pct.png` });
+  }
+}
+</code></pre></div>
+<div><h2 id="cross-environment-verification">3. Cross-Environment Verification</h2><h3 id="criteria-1">Criteria</h3>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div class="id"><div><div><code>ENV-LOCAL</code></div><div>Animation renders on <code>localhost:3000</code></div><div>All animations visible and functional</div><div>Broken or missing locally</div></div><div><div><code>ENV-PAGE</code></div><div>Animation renders on <code>.aem.page</code> (preview)</div><div>All animations visible after push</div><div>Works locally but not on preview</div></div><div><div><code>ENV-LIVE</code></div><div>Animation renders on <code>.aem.live</code> (production CDN)</div><div>All animations visible after publish</div><div>Works on preview but not production</div></div><div><div><code>ENV-CORS</code></div><div>No CORS issues with CDN-loaded libraries</div><div><code>lottie-web</code> loads from jsDelivr without error</div><div>CORS or CSP blocks the library</div></div></div></div>
+<div><h2 id="console-health">4. Console Health</h2><h3 id="criteria-2">Criteria</h3>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div class="id"><div><div><code>CON-SCRIPTS</code></div><div>No errors from <code>scripts.js</code></div><div>Console clean</div><div>TypeError, ReferenceError from scripts.js</div></div><div><div><code>CON-DELAYED</code></div><div>No errors from <code>delayed.js</code></div><div>Console clean</div><div>Lottie load failure or path error</div></div><div><div><code>CON-BLOCK</code></div><div>No errors from block JS</div><div>Console clean</div><div>Block decoration errors</div></div><div><div><code>CON-404</code></div><div>No 404s for animation assets</div><div>Network tab clean</div><div>Missing <code>.json</code>, <code>.svg</code>, or image files</div></div></div><h3 id="verification-via-playwright">Verification via Playwright</h3><pre><code class="language-javascript">// Use with browser_console_messages — filter animation errors
+(messages) => {
+  const keywords = ['lottie', 'animation', 'scroll-reveal', 'counter', 'IntersectionObserver', 'delayed.js', 'hero.js', 'cards.js'];
+  const errors = messages
+    .filter(m => m.type === 'error')
+    .filter(m => keywords.some(kw => m.text.toLowerCase().includes(kw)));
+  return {
+    criterion: 'GLOB-CONSOLE',
+    totalErrors: errors.length,
+    status: errors.length === 0 ? 'PASS' : 'FAIL',
+    errors: errors.map(e => ({ text: e.text, location: e.location })),
+  };
+}
+</code></pre></div>
+<div><h2 id="quick-reference-all-criterion-ids-by-pattern">5. Quick Reference: All Criterion IDs by Pattern</h2>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div class="pattern"><div><div>A (Scroll-reveal)</div><div><code>A-DOM</code>, <code>A-IO</code>, <code>A-CSS</code>, <code>A-FINAL</code>, <code>A-REDUCED</code>, <code>A-LCP</code></div></div><div><div>B (Scripted scroll)</div><div><code>B-IO</code>, <code>B-rAF</code>, <code>B-PROPS</code>, <code>B-REDUCED</code></div></div><div><div>C (Counter)</div><div><code>C-VALUE</code>, <code>C-IO</code>, <code>C-EASING</code>, <code>C-REDUCED</code>, <code>C-PARSE</code></div></div><div><div>D (Hover/focus)</div><div><code>D-HOVER</code>, <code>D-FOCUS</code>, <code>D-CSS</code>, <code>D-REDUCED</code></div></div><div><div>E (Page-load)</div><div><code>E-LOAD</code>, <code>E-KEYFRAMES</code>, <code>E-REDUCED</code></div></div><div><div>F (Lottie)</div><div><code>F-DELAYED</code>, <code>F-CONTAINER</code>, <code>F-RENDER</code>, <code>F-LOOP</code>, <code>F-REDUCED</code>, <code>F-LIGHT</code>, <code>F-ASSET</code></div></div><div><div>G (Parallax)</div><div><code>G-IO</code>, <code>G-rAF</code>, <code>G-PROPS</code>, <code>G-REDUCED</code></div></div><div><div>Global</div><div><code>GLOB-NO-LIB</code>, <code>GLOB-VANILLA</code>, <code>GLOB-PROGRESSIVE</code>, <code>GLOB-CONSOLE</code>, <code>GLOB-DA</code></div></div><div><div>Visual</div><div><code>VIS-START</code>, <code>VIS-END</code>, <code>VIS-PATH</code>, <code>VIS-LOTTIE</code></div></div><div><div>Environment</div><div><code>ENV-LOCAL</code>, <code>ENV-PAGE</code>, <code>ENV-LIVE</code>, <code>ENV-CORS</code></div></div><div><div>Console</div><div><code>CON-SCRIPTS</code>, <code>CON-DELAYED</code>, <code>CON-BLOCK</code>, <code>CON-404</code></div></div></div><p><strong>Total: 45 criteria</strong> across 11 categories.</p></div>
+<div><h2 id="eds-readable-output-formats">6. EDS-Readable Output Formats</h2><p>Verification results <strong>must</strong> be stored in formats that EDS can consume: metadata blocks, table blocks, or JSON in metadata. This enables tooling like query-index, custom reporting blocks, and automated dashboards.</p><h3 id="page-metadata-block-overall-status">6.1 Page Metadata Block (Overall Status)</h3><p>Store a page's verification summary as standard EDS metadata key-value pairs. EDS parses these from the metadata block and exposes them to scripts.</p>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div class="key"><div><div><code>animation-verification</code></div><div><code>pass</code> or <code>fail</code></div></div><div><div><code>animation-verification-date</code></div><div>ISO date (e.g. <code>2025-02-26</code>)</div></div><div><div><code>animation-source-url</code></div><div>Source page URL</div></div><div><div><code>animation-criteria-passed</code></div><div>Comma-separated criterion IDs (e.g. <code>A-DOM,A-IO,A-CSS,F-RENDER,F-DELAYED</code>)</div></div><div><div><code>animation-criteria-failed</code></div><div>Comma-separated criterion IDs that failed (empty if none)</div></div><div><div><code>animation-notes</code></div><div>Short free-text notes (optional)</div></div></div><p><strong>EDS behavior:</strong> The metadata block is parsed by the metadata block processor; keys become meta names or document attributes. Scripts read them via <code>getMetadata('animation-verification')</code>.</p><h3 id="table-block-per-animation-detail">6.2 Table Block (Per-Animation Detail)</h3><p>Store per-criterion verification results as an EDS table block for detailed reporting.</p><p><strong>Block name:</strong> <code>animation-verification</code></p>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div class="criterion-id"><div><div>A-DOM</div><div>scroll-reveal</div><div>.scroll-reveal and .is-visible present</div><div>pass</div><div></div></div><div><div>A-LCP</div><div>scroll-reveal</div><div>First section has no scroll-reveal</div><div>pass</div><div></div></div><div><div>F-RENDER</div><div>lottie</div><div>Lottie SVG visible after delayed load</div><div>pass</div><div></div></div><div><div>F-CONTAINER</div><div>lottie</div><div>data-lottie-path set with correct path</div><div>pass</div><div></div></div><div><div>C-VALUE</div><div>counter</div><div>Final value matches source (750+)</div><div>fail</div><div>Suffix + missing</div></div><div><div>GLOB-NO-LIB</div><div>global</div><div>No banned animation libraries</div><div>pass</div><div></div></div></div><p><strong>EDS behavior:</strong> Content is authored as a table; EDS converts it to a block. A dedicated block JS can read the table and expose data to scripts or render a verification dashboard.</p><h3 id="json-in-metadata-machine-readable">6.3 JSON in Metadata (Machine-Readable)</h3><p>For tooling, query-index, or automation, store a single metadata key whose value is a JSON string.</p><p><strong>Metadata key:</strong> <code>animation-verification-json</code></p><p><strong>Value example:</strong></p><pre><code class="language-json">{
+  "page": "/content/index",
+  "sourceUrl": "https://www.zelis.com/",
+  "verifiedAt": "2025-02-26T12:00:00Z",
+  "overall": "pass",
+  "animations": [
+    {
+      "id": "hero-lottie",
+      "pattern": "F",
+      "criteria": ["F-DELAYED", "F-CONTAINER", "F-RENDER", "F-LOOP", "F-REDUCED", "F-LIGHT", "F-ASSET"],
+      "passed": ["F-DELAYED", "F-CONTAINER", "F-RENDER", "F-LOOP", "F-REDUCED", "F-LIGHT", "F-ASSET"],
+      "failed": [],
+      "notes": ""
+    },
+    {
+      "id": "scroll-reveal-sections",
+      "pattern": "A",
+      "criteria": ["A-DOM", "A-IO", "A-CSS", "A-FINAL", "A-REDUCED", "A-LCP"],
+      "passed": ["A-DOM", "A-IO", "A-CSS", "A-FINAL", "A-REDUCED", "A-LCP"],
+      "failed": [],
+      "notes": ""
+    },
+    {
+      "id": "stats-counters",
+      "pattern": "C",
+      "criteria": ["C-VALUE", "C-IO", "C-EASING", "C-REDUCED", "C-PARSE"],
+      "passed": ["C-IO", "C-EASING", "C-REDUCED", "C-PARSE"],
+      "failed": ["C-VALUE"],
+      "notes": "Suffix % not displayed"
+    }
+  ]
+}
+</code></pre><p><strong>EDS behavior:</strong> Stored as a metadata key-value pair; scripts read the metadata block, get the value for <code>animation-verification-json</code>, and <code>JSON.parse()</code> it. Works with query-index for cross-page verification dashboards.</p></div>
+<div><h2 id="verification-workflow">7. Verification Workflow</h2><h3 id="step-by-step-execution-order">Step-by-Step Execution Order</h3><ol>
+<li><strong>Run detection</strong> — Use <code>detect-animations.js</code> on the <strong>source</strong> page to build the animation inventory</li>
+<li><strong>Run source inventory script</strong> (§1 automated check for source) → save result</li>
+<li><strong>Navigate to EDS page</strong> (<code>localhost:3000</code> or <code>.aem.page</code>)</li>
+<li><strong>Wait 2+ seconds</strong> (for <code>delayed.js</code> to load Lottie)</li>
+<li><strong>Scroll full page</strong> incrementally (400px steps, 200ms pause) to trigger all IntersectionObservers</li>
+<li><strong>Run <code>verify-animations.js</code></strong> (full verification script) → save JSON report</li>
+<li><strong>Compare inventories</strong> (source vs EDS) — every source animation should have an EDS counterpart</li>
+<li><strong>Take comparison screenshots</strong> at 0%, 25%, 50%, 75%, 100% scroll (both pages)</li>
+<li><strong>Check console messages</strong> via <code>browser_console_messages</code> for animation errors</li>
+<li><strong>Run DA integrity checks</strong> (if on remote) — <code>GLOB-DA</code> automated script</li>
+<li><strong>Run asset accessibility check</strong> — <code>F-ASSET</code> automated script</li>
+<li><strong>Compile final report</strong> using EDS output format (§6)</li>
+</ol><h3 id="interpreting-results">Interpreting Results</h3>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div class="overall-status"><div><div><strong>PASS</strong></div><div>All checks green</div><div>Animation migration verified — ready for review</div></div><div><div><strong>WARN</strong></div><div>Minor issues detected</div><div>Review warnings — may be acceptable trade-offs</div></div><div><div><strong>FAIL</strong></div><div>Critical issues found</div><div>Fix failures before considering migration complete</div></div></div><h3 id="required-evidence-for-sign-off">Required Evidence for Sign-Off</h3><ul class="contains-task-list">
+<li class="task-list-item"><input type="checkbox" disabled> Source page screenshots at 5 scroll positions</li>
+<li class="task-list-item"><input type="checkbox" disabled> EDS page screenshots at matching 5 scroll positions</li>
+<li class="task-list-item"><input type="checkbox" disabled> Full verification JSON report with all criteria PASS</li>
+<li class="task-list-item"><input type="checkbox" disabled> Console error log showing zero animation-related errors</li>
+<li class="task-list-item"><input type="checkbox" disabled> Reduced-motion test confirming decorative animations disabled</li>
+<li class="task-list-item"><input type="checkbox" disabled> <code>:focus-visible</code> test confirming functional transitions preserved</li>
+<li class="task-list-item"><input type="checkbox" disabled> Confirmation on both local (<code>localhost:3000</code>) and remote (<code>.aem.page</code>)</li>
+<li class="task-list-item"><input type="checkbox" disabled> EDS metadata block or JSON written with verification results (§6)</li>
+</ul></div>

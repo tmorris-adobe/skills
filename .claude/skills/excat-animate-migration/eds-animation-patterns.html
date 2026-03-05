@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta name="viewport" content="width=device-width, initial-scale=1"/>
+<script src="/scripts/aem.js" type="module"></script>
+<script src="/scripts/scripts.js" type="module"></script>
+<link rel="stylesheet" href="/styles/styles.css"/>
+<link rel="preload" as="font" type="font/woff2" href="/fonts/avenir/avenir_next_lt_pro_regular.woff2" crossorigin>
+<link rel="preload" as="font" type="font/woff2" href="/fonts/avenir/avenir_next_lt_pro_medium.woff2" crossorigin>
+</head>
+<body>
+<header></header>
+<main>
+<div><h1 id="eds-animation-patterns-quick-reference">EDS Animation Patterns Quick Reference</h1>
+<h2 id="intersectionobserver--class-toggle-primary-pattern">IntersectionObserver + Class Toggle (Primary Pattern)</h2>
+<p>The core EDS animation pattern. Use for any scroll-triggered effect.</p>
+<pre><code class="language-javascript">const observer = new IntersectionObserver((entries) => {
+  entries.forEach((entry) => {
+    if (entry.isIntersecting) {
+      entry.target.classList.add('is-visible');
+      observer.unobserve(entry.target);
+    }
+  });
+}, { threshold: 0.1, rootMargin: '0px 0px -50px 0px' });
+</code></pre>
+<p><strong>Always pair with:</strong></p>
+<pre><code class="language-css">@media (prefers-reduced-motion: reduce) {
+  .animated-element { transition: none; opacity: 1; transform: none; }
+}
+</code></pre>
+<h2 id="requestanimationframe-for-js-driven-values">requestAnimationFrame (For JS-driven values)</h2>
+<p>Use when you need to animate a computed value (counters, progress bars, custom drawings).</p>
+<pre><code class="language-javascript">function animate(el, target, duration = 2000) {
+  const start = performance.now();
+  function update(now) {
+    const progress = Math.min((now - start) / duration, 1);
+    const eased = 1 - (1 - progress) ** 3; // ease-out cubic
+    el.textContent = Math.round(eased * target);
+    if (progress &#x3C; 1) requestAnimationFrame(update);
+  }
+  requestAnimationFrame(update);
+}
+</code></pre>
+<h2 id="lottie-via-delayedjs-for-complex-vector-animations">Lottie via delayed.js (For complex vector animations)</h2>
+<p>Only external library allowed in EDS. Load in delayed phase.</p>
+<pre><code class="language-javascript">// delayed.js
+await loadScript('https://cdn.jsdelivr.net/npm/lottie-web@5/build/player/lottie_light.min.js');
+window.lottie.loadAnimation({ container, renderer: 'svg', loop: true, autoplay: true, path: '/animations/file.json' });
+</code></pre>
+<p><strong>DA authoring:</strong> Link text = file path (e.g., <code>/animations/hero.json</code>). Block JS converts to <code>data-lottie-path</code> container.</p>
+<h2 id="file-placement">File Placement</h2>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div class="what"><div><div>Scroll-reveal init</div><div><code>scripts.js</code> → <code>loadLazy()</code></div><div>After first section</div></div><div><div>Animation CSS</div><div><code>lazy-styles.css</code></div><div>Post-LCP</div></div><div><div>Lottie loader</div><div><code>delayed.js</code></div><div>1.5s after load</div></div><div><div>Block animations</div><div><code>blocks/{name}/{name}.js</code></div><div>With block</div></div><div><div>Hover/transition CSS</div><div><code>blocks/{name}/{name}.css</code></div><div>With block</div></div></div>
+<h2 id="easing-functions-css-and-js">Easing Functions (CSS and JS)</h2>
+<pre><code class="language-css">/* CSS */
+transition-timing-function: cubic-bezier(0.33, 1, 0.68, 1); /* ease-out */
+transition-timing-function: cubic-bezier(0.65, 0, 0.35, 1); /* ease-in-out */
+</code></pre>
+<pre><code class="language-javascript">/* JS equivalents */
+const easeOutCubic = (t) => 1 - (1 - t) ** 3;
+const easeOutQuart = (t) => 1 - (1 - t) ** 4;
+const easeInOutCubic = (t) => t &#x3C; 0.5 ? 4 * t ** 3 : 1 - (-2 * t + 2) ** 3 / 2;
+</code></pre>
+<h2 id="accessibility-checkpoint">Accessibility Checkpoint</h2>
+<p>Every animation MUST include:</p>
+<pre><code class="language-javascript">if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+</code></pre>
+<pre><code class="language-css">@media (prefers-reduced-motion: reduce) {
+  .animated { animation: none; transition: none; opacity: 1; transform: none; }
+}
+</code></pre></div>
+</main>
+<footer></footer>
+</body>
+</html>

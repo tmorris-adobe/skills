@@ -1,0 +1,185 @@
+<div><h2 id="name-excat-project-time-trackingdescription-review-the-project-journal-to-compile-daily-time-reports--actions-taken-time-per-action-session-totals-daily-totals-and-cumulative-project-time-invoke-when-user-says-time-report-how-much-time-today-daily-summary-time-tracking-what-did-we-work-on-today-project-hours-time-for-date-break-out-todays-actions-or-when-closing-out-a-days-work">name: excat-project-time-tracking
+description: Review the project journal to compile daily time reports — actions taken, time per action, session totals, daily totals, and cumulative project time. Invoke when user says "time report", "how much time today", "daily summary", "time tracking", "what did we work on today", "project hours", "time for [date]", "break out today's actions", or when closing out a day's work.</h2><h1 id="execution-mindset">EXECUTION MINDSET</h1><p><strong>You are a TIME ANALYST. Your job is to compile clear, accurate daily time reports from journal session data.</strong></p><ul>
+<li>DO: Read every session entry and extract action-level time estimates</li>
+<li>DO: Group sessions by date and calculate accurate totals</li>
+<li>DO: Show both agent time and total time (with margin) for transparency</li>
+<li>DO: Normalize times to minutes for arithmetic, then display as <code>Xh Ym</code> when >= 60m</li>
+<li>DON'T: Invent time data — only report what's in the journal</li>
+<li>DON'T: Include problem details, key decisions, or other non-time content — the problem tracker handles that</li>
+<li>DON'T: Round aggressively — preserve the granularity from the journal</li>
+</ul><p><strong>Your output should let someone answer "how much time did we spend on this project today?" in under 10 seconds.</strong></p></div>
+<div><h1 id="project-time-tracking-skill">Project Time Tracking Skill</h1><h2 id="scope-time-only">Scope: Time Only</h2><p>This skill focuses <strong>only</strong> on time data:</p><ul>
+<li>Session dates and durations</li>
+<li>Action-level time estimates</li>
+<li>User overhead margins</li>
+<li>Daily and cumulative totals</li>
+</ul><p>It does not track problems (that's the problem tracker), context (that's project-context.md), or detailed outcomes (that's the journal itself).</p><h2 id="purpose">Purpose</h2><p>Compile daily time reports from the project journal. Useful for:</p><ul>
+<li><strong>Daily standup/reporting</strong> — "What did we work on and how long?"</li>
+<li><strong>Project accounting</strong> — Track cumulative hours invested</li>
+<li><strong>Estimation calibration</strong> — Compare estimated vs. actual time patterns</li>
+<li><strong>Billing/invoicing</strong> — Break down time by date with action-level detail</li>
+</ul><h2 id="when-to-use">When to Use</h2><ul>
+<li><strong>End of day</strong> — Compile the day's time report</li>
+<li><strong>On request</strong> — User asks "how much time today?", "daily summary", "time report", "project hours", "time for 2026-02-26"</li>
+<li><strong>Weekly/periodic review</strong> — Compile multi-day summaries</li>
+<li><strong>Start of session</strong> — Quick glance at cumulative time invested</li>
+</ul><h2 id="rules">Rules</h2><ol>
+<li>
+<p><strong>Source of truth is journal.md.</strong> Time data is extracted from session entries. If the report and journal conflict, journal.md wins.</p>
+</li>
+<li>
+<p><strong>Overwrite, don't append.</strong> <code>time-tracking.md</code> is regenerated each run. It's a derived report, not an independent record.</p>
+</li>
+<li>
+<p><strong>Include margins when available.</strong> If the journal has a Duration line with agent time + margin, use it. If margin isn't recorded, report agent time only and add a note: <em>"Margin not in journal; add 5-15% for user overhead if needed."</em></p>
+</li>
+<li>
+<p><strong>Action-level detail.</strong> Break out individual actions with their time estimates — don't just show session totals.</p>
+</li>
+<li>
+<p><strong>Do not fabricate.</strong> Only report time that appears in journal.md. If a session has no time estimates, note "no time data" rather than guessing.</p>
+</li>
+<li>
+<p><strong>Date scope.</strong> When the user asks for a specific date, only include sessions on that exact date. Ignore sessions on other days.</p>
+</li>
+<li>
+<p><strong>Time display.</strong> Normalize all times to minutes for arithmetic (e.g., <code>1h 30m</code> -> 90). Display totals as <code>Xh Ym</code> when >= 60m, or <code>Xm</code> when under. Handle <code>~</code> prefixes.</p>
+</li>
+</ol><h2 id="locations">Locations</h2><ul>
+<li><strong>Journal source:</strong> Same as journaling skill. Default: <code>journal/journal.md</code>. If the project uses <code>JOURNAL_DIR</code> or <code>journal-config.yaml</code>, use that path.</li>
+<li><strong>Report output:</strong> Same directory as the journal. Default: <code>journal/time-tracking.md</code>.</li>
+<li><strong>Schema template:</strong> <code>skills/excat-project-time-tracking/time-report-format.md</code></li>
+</ul><h2 id="workflow">Workflow</h2><h3 id="step-1-determine-the-date">Step 1: Determine the date</h3><ul>
+<li><strong>Default:</strong> All dates (full report).</li>
+<li><strong>Single date:</strong> If the user asks for a specific date ("time for today", "time for 2026-02-26"), use that date only.</li>
+<li><strong>Date range:</strong> If the user asks for a range ("this week", "last 3 days"), filter to matching dates.</li>
+</ul><h3 id="step-2-read-the-journal">Step 2: Read the journal</h3><ul>
+<li>Open <code>journal/journal.md</code></li>
+<li>For each session, extract:
+<ul>
+<li>Session number, date, title (from header: <code>## Session NNN — YYYY-MM-DD [HH:MM-HH:MM] — Title</code>)</li>
+<li>Duration line: agent time, margin percentage, total with margin</li>
+<li>Each action's time estimate from the Actions table or bullet list</li>
+</ul>
+</li>
+<li>If filtering to a specific date, skip sessions that don't match.</li>
+</ul><h3 id="step-3-extract-session-level-duration">Step 3: Extract session-level duration</h3><p>For each session, look for the Duration line:</p><pre><code>**Duration:** ~Xh Ym (agent) + N% user overhead = ~Xh Ym total
+</code></pre><p>Parse agent time and total-with-margin. Use these for session subtotals — they already reflect the journal's margin. If missing, sum action times and note "agent time only; margin not in journal."</p><h3 id="step-4-group-by-date-and-calculate-totals">Step 4: Group by date and calculate totals</h3><ul>
+<li>Group sessions by their date (from the session header)</li>
+<li>Sessions spanning multiple dates (like Session 000: "2026-02-18 to 2026-02-25") go under their start date with a note</li>
+</ul><p>For each date:</p><ul>
+<li><strong>Actions:</strong> List each action with its time estimate</li>
+<li><strong>Session subtotal:</strong> Agent time sum, plus session total with margin if available</li>
+<li><strong>Daily total:</strong> Sum of all session totals for that date</li>
+</ul><p>Cumulative:</p><ul>
+<li><strong>Project total:</strong> Sum of all daily totals across the entire journal</li>
+</ul><h3 id="step-5-generate-output">Step 5: Generate output</h3><p><strong>Choose output mode based on context:</strong></p><p><strong>(a) Full report</strong> (default for "time report", "compile time", end of day):
+Write <code>journal/time-tracking.md</code> using the schema in <a href="time-report-format.md">time-report-format.md</a>:</p><ol>
+<li><strong>Header</strong> with last-updated timestamp and cumulative project total</li>
+<li><strong>Daily sections</strong> in reverse chronological order (most recent first) — each with:
+<ul>
+<li>Date heading and daily total</li>
+<li>Per-session breakdown with action-level detail</li>
+<li>Per-session subtotals (agent time and total with margin)</li>
+</ul>
+</li>
+<li><strong>Cumulative summary</strong> at the bottom with total sessions, total time, total actions</li>
+</ol><p><strong>(b) Quick reply</strong> (for "how much time today?", "quick summary"):
+Output the daily summary directly in the reply without writing a file. Use the same per-session format but skip the file header and cumulative summary.</p><h2 id="output-file-structure">Output File Structure</h2><pre><code class="language-markdown"># Time Tracking — [Project Name]
+
+> Daily time reports compiled from journal.md session data.
+> Last updated: [YYYY-MM-DD] (after Session [NNN])
+
+**Project total:** [Xh Ym] (agent) / [Xh Ym] (with margin)
+
+---
+
+## [YYYY-MM-DD] — [Daily total with margin]
+
+### Session [NNN] — [Title] ([agent time] agent + [N]% = [total])
+
+| # | Action | Time |
+|---|--------|------|
+| 1 | [Action description] | [Xm] |
+| 2 | [Action description] | [Xm] |
+| **Total** | | **[Xm]** |
+
+**Session subtotal (agent):** [Xh Ym]
+**Session total (with margin):** [Xh Ym]
+
+---
+
+*(Repeat for each session on this day.)*
+
+**Daily total:** [Xh Ym] (agent) / [Xh Ym] (with margin)
+
+---
+
+## Cumulative Summary
+
+| Date | Sessions | Agent Time | With Margin | Actions |
+|------|----------|------------|-------------|---------|
+| [YYYY-MM-DD] | [N] | [Xh Ym] | [Xh Ym] | [N] |
+| ...  | ...      | ...        | ...         | ...     |
+| **Total** | **[N]** | **[Xh Ym]** | **[Xh Ym]** | **[N]** |
+</code></pre><h2 id="when-to-run">When to Run</h2>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div class="trigger"><div><div>User asks "time report" / "daily summary" / "compile time"</div><div>Full run — write <code>time-tracking.md</code> (steps 1-5a)</div></div><div><div>End of day / closing out work</div><div>Full run — write <code>time-tracking.md</code> (steps 1-5a)</div></div><div><div>User asks "how much time today?" / "quick summary"</div><div>Quick reply — output in chat (steps 1-5b)</div></div><div><div>User asks "how much total time?"</div><div>Read-only: check header of existing report or metrics.md</div></div><div><div>Session close</div><div>Optional — run if user wants up-to-date time tracking</div></div></div><h2 id="integration">Integration</h2><p><strong>Reads from:</strong></p><ul>
+<li><code>journal.md</code> — Session headers (date, duration) and action time estimates</li>
+</ul><p><strong>Writes to:</strong></p><ul>
+<li><code>time-tracking.md</code> only (full report mode)</li>
+</ul><p><strong>Relationship to metrics.md:</strong> The journaling skill maintains <code>metrics.md</code> with cumulative time stats. This skill provides the <strong>daily breakdown</strong> that metrics.md summarizes. They complement each other — metrics.md gives the totals, time-tracking.md shows the detail.</p><h2 id="parsing-notes">Parsing Notes</h2><h3 id="session-header-formats">Session header formats</h3><pre><code>## Session NNN — YYYY-MM-DD — Title
+## Session NNN — YYYY-MM-DD HH:MM-HH:MM — Title
+</code></pre><p>Match the date token after the first <code>—</code>. Ignore time range if present.</p><h3 id="duration-line-formats">Duration line formats</h3><pre><code>**Duration:** ~Xm (agent) + N% user overhead = ~Xm total
+**Duration:** ~Xh Ym (agent) + N% user overhead = ~Xh Ym total
+</code></pre><p>Extract: agent time, margin percentage, total with margin.</p><h3 id="action-time-formats">Action time formats</h3><p><strong>Table format:</strong></p><pre><code>| # | Action | Pattern | Attempts | Result | Time (est.) |
+| 1 | [Action description] | new | 1 | pass | Xm |
+</code></pre><p>The last column is the time estimate.</p><p><strong>Bullet format:</strong></p><pre><code>- [x] Action description (~Xm) — pass
+</code></pre><p>Time is in parentheses with <code>~</code> prefix.</p><h3 id="normalizing-times">Normalizing times</h3><ul>
+<li>Convert all times to minutes for summing: <code>1h 30m</code> -> 90, <code>20m</code> -> 20, <code>~45m</code> -> 45</li>
+<li>Handle <code>~</code> prefix (strip for arithmetic)</li>
+<li>Handle optional <code>h</code>/<code>m</code> suffixes</li>
+<li>Display: use <code>Xm</code> when &#x3C; 60, <code>Xh Ym</code> when >= 60</li>
+</ul><h3 id="backfill-sessions">Backfill sessions</h3><p>Session 000 may span multiple dates. List it under its start date and note the date range in the output.</p><h2 id="troubleshooting">Troubleshooting</h2><p><strong>Report seems out of date:</strong></p><ul>
+<li>Re-run the skill. It regenerates from journal.md each time.</li>
+</ul><p><strong>Times don't match metrics.md:</strong></p><ul>
+<li>Both are derived from journal.md. If they disagree, recheck the journal. Small rounding differences are expected.</li>
+</ul><p><strong>Session has no time estimates:</strong></p><ul>
+<li>Note "no time data" for that session. Do not estimate or fabricate.</li>
+</ul><p><strong>Backfill session spans multiple dates:</strong></p><ul>
+<li>List under the start date with a note about the date range. Do not split across dates.</li>
+</ul><p><strong>Duration line missing margin:</strong></p><ul>
+<li>Report agent time only for that session. Add note: "Margin not in journal; add 5-15% for user overhead if needed."</li>
+</ul><h2 id="additional-resources">Additional Resources</h2><ul>
+<li>Report file schema: <a href="time-report-format.md">time-report-format.md</a></li>
+<li>Journal schema (for parsing): <code>skills/excat-journaling/journal-format.md</code></li>
+<li>Time estimation guide: <code>skills/excat-journaling/SKILL.md</code> (Time Tracking section)</li>
+</ul></div>
+<div><p><em>Project Time Tracking Skill v1.1</em></p></div>

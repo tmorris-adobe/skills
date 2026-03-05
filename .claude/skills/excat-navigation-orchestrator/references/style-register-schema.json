@@ -1,0 +1,31 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Style Register",
+  "description": "Per-component style validation with CRITIQUE PROOF via inline per-component critique (step 6a-6g). status=validated ONLY when lastSimilarity >= 95 AND critiqueReportPath points to an existing file AND critiqueIterations >= 1 AND screenshotSourcePath and screenshotMigratedPath point to actual PNG files. Self-assessed scores are NOT accepted — screenshots must be captured and compared.",
+  "type": "object",
+  "required": ["components", "allValidated"],
+  "properties": {
+    "components": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["id", "label", "status", "lastSimilarity", "critiqueReportPath", "critiqueIterations", "screenshotSourcePath", "screenshotMigratedPath"],
+        "properties": {
+          "id": { "type": "string", "description": "Unique ID. Examples: row-0-logo, row-0-cta, megamenu-trigger-0-products, megamenu-trigger-0-item-0-widget-x, megamenu-trigger-0-featured, megamenu-trigger-0-tab-category-a" },
+          "label": { "type": "string", "description": "Human-readable label (e.g. 'Logo', 'Offers CTA', 'Products megamenu panel', 'Widget X image-card')" },
+          "status": { "type": "string", "enum": ["pending", "validated"], "description": "validated ONLY when lastSimilarity >= 95 AND all proof fields are valid" },
+          "lastSimilarity": { "type": "number", "minimum": 0, "maximum": 100, "description": "From inline critique comparison (NOT self-assessed). Must be >= 95 to validate." },
+          "critiqueReportPath": { "type": "string", "description": "REQUIRED. Path to critique-report.json from step 6e. Must exist on disk. Empty = not validated." },
+          "critiqueIterations": { "type": "integer", "minimum": 0, "description": "REQUIRED. Times the inline critique ran for this component. Must be >= 1 for validated." },
+          "screenshotSourcePath": { "type": "string", "description": "REQUIRED. Path to source component screenshot (PNG) from step 6c. Must exist on disk." },
+          "screenshotMigratedPath": { "type": "string", "description": "REQUIRED. Path to migrated component screenshot (PNG) from step 6d. Must exist on disk." },
+          "sourceSelector": { "type": "string", "description": "CSS/xpath selector used to isolate this component on the source page (step 6a)" },
+          "migratedSelector": { "type": "string", "description": "CSS/xpath selector used to isolate this component on the migrated page (step 6a)" },
+          "interactionRequired": { "type": "string", "description": "If component needed interaction before capture (step 6b): e.g. 'hover nav-trigger-0 to open panel', 'click SUV tab'" },
+          "notes": { "type": "string" }
+        }
+      }
+    },
+    "allValidated": { "type": "boolean", "description": "true ONLY when every component is validated with full critique proof (report + screenshots + iterations)." }
+  }
+}
