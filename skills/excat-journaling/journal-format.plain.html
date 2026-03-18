@@ -1,0 +1,143 @@
+<div><h1 id="journal-format--quick-reference">Journal Format — Quick Reference</h1><blockquote>
+<p>Portable template for session entries. See <code>SKILL.md</code> for full rules and workflow.</p>
+</blockquote></div>
+<div><h2 id="session-nnn--yyyy-mm-dd-hhmmhhmm--brief-title">Session [NNN] — [YYYY-MM-DD] [HH:MM–HH:MM] — [Brief Title]</h2><p><strong>Branch:</strong> <code>[git-branch-name]</code>
+<strong>Duration:</strong> [agent-time] (agent) + [margin]% user overhead = [total]
+<strong>Session goal:</strong> [What the user is trying to accomplish]</p><h3 id="actions">Actions</h3><p><strong>Table format</strong> (default — use for sessions with retries or complexity):</p>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div><div><div>1</div><div>[Specific action with file/function names]</div><div>[new/retry/continuation]</div><div>[N]</div><div>[pass/fail/partial]</div><div>[Xm]</div></div></div><p><strong>Bullet format</strong> (for simple, linear sessions with &#x3C; 5 straightforward actions):</p><ul class="contains-task-list">
+<li class="task-list-item"><input type="checkbox" checked disabled> Action description (~Xm) — pass</li>
+<li class="task-list-item"><input type="checkbox" checked disabled> Action description (~Xm) — pass, 2 attempts</li>
+<li class="task-list-item"><input type="checkbox" disabled> Action description — deferred</li>
+</ul><p><em>Pick one format per session. Don't mix.</em></p><h3 id="outcomes">Outcomes</h3><ul>
+<li><strong>Completed:</strong> [Things finished]</li>
+<li><strong>Partial:</strong> [Things started but not finished, with state]</li>
+<li><strong>Deferred:</strong> [Things identified but postponed]</li>
+</ul><h3 id="problems-encountered">Problems Encountered</h3>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div class="problem"><div><div>[Description]</div><div>[blocker/major/minor]</div><div>[yes/no/workaround]</div><div>[How fixed]</div><div>[#N]</div></div></div><p><em>(Write "(none)" if no problems occurred)</em></p><h3 id="key-decisions">Key Decisions</h3><ul>
+<li>[Decision and rationale — only for non-obvious choices]</li>
+</ul><h3 id="files-changed">Files Changed</h3><ul>
+<li><code>[path/to/file]</code> — [what changed and why]</li>
+</ul><h3 id="commits">Commits</h3><ul>
+<li><code>[short-hash]</code> — [commit message summary]</li>
+</ul><h3 id="carry-forward">Carry-Forward</h3><blockquote>
+<p>[What the next session must know. Where to start. Any open threads.]</p>
+</blockquote></div>
+<div><h2 id="field-reference">Field Reference</h2>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div class="field"><div><div>Pattern</div><div><code>new</code> / <code>retry</code> / <code>continuation</code></div><div>First attempt, re-attempt after failure, resuming incomplete work</div></div><div><div>Result</div><div><code>pass</code> / <code>fail</code> / <code>partial</code></div><div>Fully successful, did not work, partially worked</div></div><div><div>Severity</div><div><code>blocker</code> / <code>major</code> / <code>minor</code></div><div>Can't continue, significant impediment, inconvenience</div></div><div><div>Resolved</div><div><code>yes</code> / <code>no</code> / <code>workaround</code></div><div>Fixed, still open, temporary fix in place</div></div><div><div>Margin</div><div><code>5%</code> / <code>10%</code> / <code>15%</code></div><div>Autonomous, typical, exploratory sessions</div></div></div><h2 id="time-estimation-guide">Time Estimation Guide</h2>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div class="action-type"><div><div>File read/analysis</div><div>1–2 min</div></div><div><div>Simple edit</div><div>2–3 min</div></div><div><div>Code generation</div><div>5–15 min</div></div><div><div>Complex implementation</div><div>15–45 min</div></div><div><div>Debugging/troubleshooting</div><div>10–30 min</div></div><div><div>Research/exploration</div><div>5–15 min</div></div><div><div>Conversion/generation</div><div>3–5 min</div></div><div><div>Git operations</div><div>1–2 min</div></div><div><div>Visual verification</div><div>3–5 min</div></div></div></div>

@@ -1,0 +1,746 @@
+<div><h2 id="name-excat-animate-migrationdescription-auto-detect-analyze-and-replicate-animations-from-source-webpages-into-adobe-edge-delivery-services-handles-css-animations-javascript-animations-lottiebodymovin-scroll-triggered-effects-counter-animations-parallax-and-any-custom-animation-regardless-of-original-implementation-recreates-animations-using-eds-compatible-vanilla-js-css-and-intersectionobserver-patterns-invoke-when-user-says-migrate-animations-replicate-animations-detect-animations-recreate-animations-or-references-animation-work-on-a-source-site">name: excat-animate-migration
+description: Auto-detect, analyze, and replicate animations from source webpages into Adobe Edge Delivery Services. Handles CSS animations, JavaScript animations, Lottie/bodymovin, scroll-triggered effects, counter animations, parallax, and any custom animation regardless of original implementation. Recreates animations using EDS-compatible vanilla JS, CSS, and IntersectionObserver patterns. Invoke when user says "migrate animations", "replicate animations", "detect animations", "recreate animations", or references animation work on a source site.</h2><h1 id="execution-mindset">EXECUTION MINDSET</h1><p><strong>You are an ACTION-ORIENTED agent. Your job is to DETECT, ANALYZE, and RECREATE animations, not write reports about them.</strong></p><ul>
+<li>DO: Navigate source pages, detect all animations, analyze their behavior, and recreate them</li>
+<li>DO: Write working EDS-compatible vanilla JS and CSS</li>
+<li>DO: Test animations locally at http://localhost:3000 and verify visually</li>
+<li>DON'T: Generate markdown reports or summaries unless explicitly requested</li>
+<li>DON'T: Skip animations because they're "too complex" — find an EDS-compatible equivalent</li>
+</ul><p><strong>Your output should be working animated code, not documentation about your process.</strong></p></div>
+<div><h1 id="animation-migration-skill">Animation Migration Skill</h1><h2 id="purpose">Purpose</h2><p>Automatically detect, analyze, and faithfully replicate all animations from a source webpage into an Adobe Edge Delivery Services project. This skill handles ANY animation type regardless of original implementation technology, and recreates them using only EDS-compatible techniques (vanilla JS, CSS, IntersectionObserver).</p><h2 id="scope">Scope</h2><p>This skill covers ALL animation types found on webpages:</p>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div class="animation-type"><div><div>CSS transitions/animations</div><div>Computed styles, <code>@keyframes</code> in stylesheets</div><div>Vanilla CSS <code>@keyframes</code> + class toggles</div></div><div><div>JavaScript animations</div><div><code>requestAnimationFrame</code>, <code>setInterval</code>, GSAP, anime.js</div><div>Vanilla <code>requestAnimationFrame</code></div></div><div><div>Lottie / Bodymovin</div><div><code>&#x3C;lottie-player></code>, <code>.json</code> animation files, <code>lottie.loadAnimation</code></div><div><code>lottie-web</code> via <code>delayed.js</code></div></div><div><div>Scroll-triggered reveals</div><div>IntersectionObserver, scroll listeners, Waypoints, AOS, ScrollMagic</div><div>IntersectionObserver + CSS class toggle</div></div><div><div>Counter/number animations</div><div>Animated numeric values on scroll</div><div><code>requestAnimationFrame</code> + IntersectionObserver</div></div><div><div>Parallax effects</div><div>Transform on scroll, background-attachment</div><div>CSS <code>transform</code> via scroll listener or IO</div></div><div><div>SVG animations</div><div>SMIL, CSS on SVG elements, JS-driven SVG</div><div>Inline SVG + CSS animations</div></div><div><div>Video backgrounds</div><div><code>&#x3C;video autoplay></code>, embedded players</div><div>Native <code>&#x3C;video></code> element</div></div><div><div>Hover/interaction effects</div><div><code>:hover</code>, <code>:focus</code>, mouse-tracking</div><div>CSS pseudo-class transitions</div></div><div><div>Page load animations</div><div>Entry animations, splash screens</div><div>CSS animations triggered by class addition</div></div><div><div>Carousel/slider motion</div><div>Swiper, Slick, Flickity, custom</div><div>EDS carousel block pattern</div></div><div><div>Typed text / morphing</div><div>Typewriter effects, text scramble</div><div>Vanilla JS character-by-character</div></div></div><h2 id="quick-decision-tree">Quick Decision Tree</h2><p>Use this to rapidly classify each detected animation and choose the right EDS pattern:</p><pre><code>Detected Animation
+├── Is it a Lottie/Bodymovin JSON animation?
+│   └── YES → Pattern F: Lottie via delayed.js
+├── Is it triggered by scroll (enters viewport)?
+│   ├── Does it animate a numeric value?
+│   │   └── YES → Pattern C: Counter via rAF + IntersectionObserver
+│   ├── Is it a simple reveal (fade/slide/scale)?
+│   │   └── YES → Pattern A: Scroll-reveal via IO + CSS class toggle
+│   └── Is it a complex multi-step animation?
+│       └── YES → Pattern B: rAF-driven animation + IO trigger
+├── Is it triggered by hover/focus?
+│   └── YES → Pattern D: CSS :hover/:focus-visible transitions
+├── Is it triggered on page load?
+│   └── YES → Pattern E: CSS @keyframes (deferred to loadLazy)
+├── Is it a parallax/scroll-linked effect?
+│   └── YES → Pattern G: IO + scroll listener with rAF
+└── Is it a video background?
+    └── YES → Native &#x3C;video autoplay muted loop>
+</code></pre><h3 id="eds-animation-patterns-ag">EDS Animation Patterns (A–G)</h3>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div class="pattern"><div><div>A</div><div>Scroll Reveal</div><div>Viewport entry</div><div><code>IntersectionObserver</code> + CSS class toggle</div><div><code>scripts.js</code> + <code>lazy-styles.css</code></div></div><div><div>B</div><div>Scripted Scroll Animation</div><div>Viewport entry</div><div><code>IntersectionObserver</code> + <code>requestAnimationFrame</code></div><div>Block JS</div></div><div><div>C</div><div>Counter</div><div>Viewport entry</div><div><code>rAF</code> + <code>IntersectionObserver</code> + easing</div><div>Block JS</div></div><div><div>D</div><div>Hover/Focus</div><div><code>:hover</code> / <code>:focus-visible</code></div><div>CSS transitions</div><div>Block CSS</div></div><div><div>E</div><div>Page-Load Entry</div><div><code>loadLazy</code> completes</div><div>CSS <code>@keyframes</code></div><div><code>lazy-styles.css</code></div></div><div><div>F</div><div>Lottie</div><div><code>delayed.js</code> loads</div><div><code>lottie-web</code> + <code>data-lottie-path</code></div><div><code>delayed.js</code> + Block JS</div></div><div><div>G</div><div>Parallax</div><div>Scroll position</div><div>IO + scroll listener + <code>rAF</code></div><div><code>scripts.js</code> or Block JS</div></div></div><p>Reference these patterns by letter in code comments (e.g., <code>// Pattern A: scroll-reveal</code>) for consistency across the project.</p><h2 id="eds-compatibility-constraints">EDS Compatibility Constraints</h2><p>All recreated animations MUST follow these rules:</p><ol>
+<li><strong>No build step</strong> — Vanilla JS (ES6+) and CSS only, no transpilation</li>
+<li><strong>No frameworks</strong> — No GSAP, anime.js, AOS, or animation libraries (exception: <code>lottie-web</code> for Lottie files)</li>
+<li><strong>Three-phase loading</strong> — Respect EDS load phases:
+<ul>
+<li><code>loadEager</code> — First section only, no animations here (LCP)</li>
+<li><code>loadLazy</code> — Remaining sections, scroll-reveal and IO-based animations initialize here</li>
+<li><code>loadDelayed</code> — Heavy libraries (Lottie) load here via <code>delayed.js</code></li>
+</ul>
+</li>
+<li><strong>Progressive enhancement</strong> — Content must be visible/usable without animations</li>
+<li><strong>Accessibility</strong> — Always respect <code>prefers-reduced-motion: reduce</code>; preserve <code>:focus-visible</code> transitions for keyboard navigation (these are functional, not decorative)</li>
+<li><strong>Performance</strong> — Use <code>IntersectionObserver</code> over scroll listeners; use <code>requestAnimationFrame</code> for JS animations; <strong>only animate <code>transform</code> and <code>opacity</code></strong> (these are compositor-friendly and avoid layout thrashing — never animate <code>width</code>, <code>height</code>, <code>top</code>, <code>left</code>, <code>margin</code>, or <code>padding</code>)</li>
+</ol><h2 id="workflow">Workflow</h2><h3 id="phase-1-detection">Phase 1: Detection</h3><p><strong>Goal:</strong> Identify every animation on the source page.</p><p><strong>Steps:</strong></p><ol>
+<li>
+<p><strong>Navigate to source URL</strong> using Playwright <code>browser_navigate</code></p>
+</li>
+<li>
+<p><strong>Take full-page screenshot</strong> for visual reference</p>
+</li>
+<li>
+<p><strong>Detect CSS animations and transitions:</strong></p>
+<pre><code class="language-javascript">// Evaluate in browser
+() => {
+  const animations = [];
+  // Check all stylesheets for @keyframes and transitions
+  for (const sheet of document.styleSheets) {
+    try {
+      for (const rule of sheet.cssRules) {
+        if (rule instanceof CSSKeyframesRule) {
+          animations.push({ type: 'keyframes', name: rule.name, css: rule.cssText });
+        }
+      }
+    } catch(e) { /* cross-origin stylesheet */ }
+  }
+  // Check computed styles for transition/animation properties
+  document.querySelectorAll('*').forEach(el => {
+    const style = getComputedStyle(el);
+    if (style.animationName !== 'none') {
+      animations.push({ type: 'css-animation', element: el.tagName + '.' + el.className, animation: style.animationName });
+    }
+    if (style.transitionProperty !== 'all' &#x26;&#x26; style.transitionDuration !== '0s') {
+      animations.push({ type: 'css-transition', element: el.tagName + '.' + el.className, property: style.transitionProperty });
+    }
+  });
+  return animations;
+}
+</code></pre>
+</li>
+<li>
+<p><strong>Detect Lottie animations:</strong></p>
+<pre><code class="language-javascript">() => {
+  const lotties = [];
+  // &#x3C;lottie-player> web components
+  document.querySelectorAll('lottie-player').forEach(el => {
+    lotties.push({ type: 'lottie-player', src: el.getAttribute('src'), loop: el.hasAttribute('loop'), autoplay: el.hasAttribute('autoplay') });
+  });
+  // lottie.loadAnimation calls (check for lottie global)
+  if (window.lottie) lotties.push({ type: 'lottie-web', note: 'lottie-web library detected' });
+  // Bodymovin containers
+  document.querySelectorAll('[data-animation-path], [data-bm-renderer]').forEach(el => {
+    lotties.push({ type: 'bodymovin', path: el.dataset.animationPath });
+  });
+  return lotties;
+}
+</code></pre>
+</li>
+<li>
+<p><strong>Detect scroll-triggered animations:</strong></p>
+<pre><code class="language-javascript">() => {
+  const scrollAnimated = [];
+  // AOS library
+  document.querySelectorAll('[data-aos]').forEach(el => {
+    scrollAnimated.push({ type: 'aos', effect: el.dataset.aos, delay: el.dataset.aosDelay });
+  });
+  // Elements with opacity:0 or transform (likely scroll-reveal candidates)
+  document.querySelectorAll('.section, [class*="animate"], [class*="reveal"], [class*="fade"]').forEach(el => {
+    const style = getComputedStyle(el);
+    if (style.opacity === '0' || style.transform !== 'none') {
+      scrollAnimated.push({ type: 'hidden-for-reveal', element: el.tagName + '.' + el.className, opacity: style.opacity, transform: style.transform });
+    }
+  });
+  return scrollAnimated;
+}
+</code></pre>
+</li>
+<li>
+<p><strong>Detect counter/number animations:</strong></p>
+<pre><code class="language-javascript">() => {
+  const counters = [];
+  // Elements with numeric content that may animate
+  document.querySelectorAll('strong, .counter, .stat, [class*="count"], [class*="number"]').forEach(el => {
+    const text = el.textContent.trim();
+    if (/^\d/.test(text)) {
+      counters.push({ type: 'counter-candidate', element: el.tagName + '.' + el.className, value: text });
+    }
+  });
+  return counters;
+}
+</code></pre>
+</li>
+<li>
+<p><strong>Detect JavaScript animation libraries:</strong></p>
+<pre><code class="language-javascript">() => {
+  const libs = [];
+  if (window.gsap || window.TweenMax) libs.push('GSAP');
+  if (window.anime) libs.push('anime.js');
+  if (window.ScrollMagic) libs.push('ScrollMagic');
+  if (window.Waypoint) libs.push('Waypoints');
+  if (window.AOS) libs.push('AOS');
+  if (window.Swiper) libs.push('Swiper');
+  if (window.lottie || window.bodymovin) libs.push('Lottie/Bodymovin');
+  if (window.Rellax) libs.push('Rellax (parallax)');
+  if (window.Typed) libs.push('Typed.js');
+  if (window.counterUp) libs.push('CounterUp');
+  return libs;
+}
+</code></pre>
+</li>
+<li>
+<p><strong>Scroll the full page</strong> to trigger lazy-loaded animations and observe behavior changes:</p>
+<pre><code class="language-javascript">// Scroll incrementally to trigger IntersectionObservers
+async () => {
+  const totalHeight = document.body.scrollHeight;
+  for (let y = 0; y &#x3C; totalHeight; y += 400) {
+    window.scrollTo(0, y);
+    await new Promise(r => setTimeout(r, 200));
+  }
+}
+</code></pre>
+</li>
+<li>
+<p><strong>Take screenshots at multiple scroll positions</strong> to capture animation states</p>
+</li>
+<li>
+<p><strong>Compile detection results</strong> into a structured animation inventory</p>
+</li>
+</ol><h3 id="phase-2-analysis">Phase 2: Analysis</h3><p><strong>Goal:</strong> For each detected animation, determine its exact behavior and map to an EDS-compatible recreation strategy.</p><p>For each animation found in Phase 1, complete this analysis checklist:</p><ol>
+<li>
+<p><strong>Classify</strong> the animation:</p>
+<ul>
+<li><strong>Trigger</strong>: page-load | scroll-into-view | hover | focus | click | timer</li>
+<li><strong>Effect</strong>: fade | slide | scale | rotate | counter | reveal | parallax | lottie | custom</li>
+<li><strong>Duration</strong>: Extract from CSS or estimate from observation</li>
+<li><strong>Easing</strong>: Extract easing function (ease-out, cubic-bezier, etc.)</li>
+<li><strong>Direction</strong>: up | down | left | right | none</li>
+<li><strong>Initial state</strong>: What CSS properties are set before animation (e.g., <code>opacity: 0; transform: translateY(24px)</code>)</li>
+<li><strong>Final state</strong>: What CSS properties are set after animation (e.g., <code>opacity: 1; transform: none</code>)</li>
+<li><strong>Animated properties</strong>: List every CSS property that changes (e.g., <code>opacity, transform</code>)</li>
+<li><strong>Iteration</strong>: once | infinite | specific count</li>
+<li><strong>Delay</strong>: Static delay or staggered (index-based)</li>
+</ul>
+<p>Use the <strong>Quick Decision Tree</strong> (above) to assign an EDS pattern letter (A–G).</p>
+</li>
+<li>
+<p><strong>Check for existing project animation utilities:</strong>
+Before writing new animation code, check if the project already has:</p>
+<ul>
+<li><code>initScrollReveal()</code> in <code>scripts.js</code> — reuse for new scroll-triggered reveals</li>
+<li>Counter utilities in existing block JS — import or extend rather than duplicate</li>
+<li>Lottie initialization in <code>delayed.js</code> — just add new containers, don't reinitialize</li>
+<li>Shared CSS classes (<code>.scroll-reveal</code>, <code>.is-visible</code>) in <code>lazy-styles.css</code> — reuse them</li>
+</ul>
+<p><strong>Always prefer extending existing animation infrastructure over creating parallel systems.</strong></p>
+</li>
+<li>
+<p><strong>Map to EDS pattern</strong>:</p>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<table><thead><tr><th>Original Pattern</th><th>EDS Recreation</th></tr></thead><tbody><tr><td>AOS / ScrollMagic / Waypoints scroll-reveal</td><td><code>IntersectionObserver</code> + <code>.scroll-reveal</code> / <code>.is-visible</code> CSS class toggle</td></tr><tr><td>GSAP timeline animations</td><td><code>requestAnimationFrame</code> with manual easing</td></tr><tr><td><code>&#x3C;lottie-player></code> or <code>lottie.loadAnimation</code></td><td><code>lottie-web</code> loaded via <code>delayed.js</code>, container with <code>data-lottie-path</code></td></tr><tr><td>CSS <code>@keyframes</code> on page load</td><td>Preserve as-is in block CSS or <code>lazy-styles.css</code></td></tr><tr><td>Counter/number increment</td><td><code>requestAnimationFrame</code> + <code>IntersectionObserver</code> with easing</td></tr><tr><td>Parallax background</td><td><code>IntersectionObserver</code> with <code>transform: translateY()</code> ratio</td></tr><tr><td>Hover transitions</td><td>Preserve as CSS <code>:hover</code> transitions</td></tr><tr><td>Carousel slide transitions</td><td>EDS carousel block with CSS transitions</td></tr></tbody></table>
+</li>
+<li>
+<p><strong>Determine file placement</strong>:</p>
+<ul>
+<li>CSS animations/transitions → block CSS or <code>lazy-styles.css</code></li>
+<li>Scroll-reveal initialization → <code>scripts.js</code> <code>loadLazy()</code></li>
+<li>Lottie loading → <code>delayed.js</code></li>
+<li>Block-specific animations → block's <code>.js</code> file</li>
+<li>Global animation utilities → <code>scripts.js</code> or dedicated helper</li>
+</ul>
+</li>
+<li>
+<p><strong>Download external assets</strong>:</p>
+<ul>
+<li>Lottie JSON files → <code>/animations/</code> directory</li>
+<li>SVG animation files → <code>/icons/</code> or <code>/images/</code></li>
+<li>Sprite sheets → <code>/images/</code></li>
+</ul>
+</li>
+</ol><h3 id="phase-3-recreation">Phase 3: Recreation</h3><p><strong>Goal:</strong> Implement each animation using EDS-compatible code.</p><h4 id="3a-scroll-reveal-animations">3a. Scroll-Reveal Animations</h4><p><strong>File:</strong> <code>scripts/scripts.js</code> (in <code>loadLazy</code>) + <code>styles/lazy-styles.css</code></p><pre><code class="language-javascript">// scripts.js — add to loadLazy()
+function initScrollReveal(main) {
+  if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+
+  const sections = main.querySelectorAll('.section');
+  sections.forEach((section, i) => {
+    if (i === 0) return; // skip first section (above-fold / LCP)
+    section.classList.add('scroll-reveal');
+  });
+
+  const observer = new IntersectionObserver((entries) => {
+    entries.forEach((entry) => {
+      if (entry.isIntersecting) {
+        entry.target.classList.add('is-visible');
+        observer.unobserve(entry.target);
+      }
+    });
+  }, { threshold: 0.1, rootMargin: '0px 0px -50px 0px' });
+
+  main.querySelectorAll('.scroll-reveal').forEach((el) => observer.observe(el));
+}
+</code></pre><pre><code class="language-css">/* lazy-styles.css */
+.scroll-reveal {
+  opacity: 0;
+  transform: translateY(24px);
+  transition: opacity 0.6s ease-out, transform 0.6s ease-out;
+}
+
+.scroll-reveal.is-visible {
+  opacity: 1;
+  transform: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .scroll-reveal {
+    opacity: 1;
+    transform: none;
+    transition: none;
+  }
+}
+</code></pre><p><strong>Variants</strong> — add alongside base <code>.scroll-reveal</code>:</p><ul>
+<li><code>.reveal-fade</code> — opacity only (no transform)</li>
+<li><code>.reveal-left</code> / <code>.reveal-right</code> — horizontal slide</li>
+<li><code>.reveal-scale</code> — scale up from 0.95</li>
+<li><code>.stagger</code> — sequential delay using CSS custom property <code>--stagger-index</code></li>
+</ul><h4 id="3b-lottie-animations">3b. Lottie Animations</h4><p><strong>File:</strong> <code>scripts/delayed.js</code> + block JS for container creation</p><pre><code class="language-javascript">// delayed.js — Lottie loader
+import { loadScript } from './aem.js';
+
+async function initLottie() {
+  await loadScript('https://cdn.jsdelivr.net/npm/lottie-web@5/build/player/lottie_light.min.js');
+
+  document.querySelectorAll('[data-lottie-path]').forEach((container) => {
+    const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+    const anim = window.lottie.loadAnimation({
+      container,
+      renderer: 'svg',
+      loop: container.dataset.lottieLoop !== 'false',
+      autoplay: !reducedMotion,
+      path: container.dataset.lottiePath,
+    });
+
+    if (reducedMotion) {
+      anim.addEventListener('DOMLoaded', () => { anim.goToAndStop(0, true); });
+    }
+  });
+
+  window.dispatchEvent(new CustomEvent('lottie-ready'));
+}
+
+initLottie();
+</code></pre><p><strong>Content authoring pattern</strong> (DA-compatible):</p><ul>
+<li>In the DA document, place a link where the <strong>display text</strong> is the path to the JSON file (e.g., <code>/animations/hero-animation.json</code>)</li>
+<li>Block JS detects links whose text ends in <code>.json</code> and converts them to <code>data-lottie-path</code> containers</li>
+<li>DA mangles hrefs (dots → hyphens), so always match by <strong>link text content</strong>, not href</li>
+</ul><pre><code class="language-javascript">// Block JS pattern for Lottie link detection
+const links = imageCol.querySelectorAll('a');
+const lottieLink = [...links].find((a) => a.textContent.trim().endsWith('.json'));
+if (lottieLink) {
+  const lottieContainer = document.createElement('div');
+  lottieContainer.dataset.lottiePath = lottieLink.textContent.trim();
+  lottieContainer.dataset.lottieLoop = 'true';
+  imageCol.textContent = '';
+  imageCol.append(lottieContainer);
+}
+</code></pre><p><strong>Lottie CSS:</strong></p><pre><code class="language-css">[data-lottie-path] {
+  position: relative;
+}
+
+[data-lottie-path] svg {
+  width: 100%;
+  height: auto;
+}
+</code></pre><h4 id="3c-counter-animations">3c. Counter Animations</h4><p><strong>File:</strong> Block JS (e.g., <code>blocks/cards/cards.js</code>)</p><pre><code class="language-javascript">function animateCounter(el, target, suffix, duration = 2000) {
+  const start = performance.now();
+  function update(now) {
+    const elapsed = now - start;
+    const progress = Math.min(elapsed / duration, 1);
+    const eased = 1 - (1 - progress) ** 3; // ease-out cubic
+    const current = Math.round(eased * target);
+    el.textContent = `${current}${suffix}`;
+    if (progress &#x3C; 1) requestAnimationFrame(update);
+  }
+  requestAnimationFrame(update);
+}
+
+function initStatsCounters(block) {
+  const statElements = block.querySelectorAll('strong');
+  const parsed = [];
+
+  statElements.forEach((el) => {
+    const text = el.textContent.trim();
+    const match = text.match(/^(\d+(?:\.\d+)?)(.*)/);
+    if (match) {
+      const target = parseFloat(match[1]);
+      const suffix = match[2];
+      parsed.push({ el, target, suffix });
+      el.textContent = `0${suffix}`; // Initialize at zero
+      el.classList.add('counter-animate');
+    }
+  });
+
+  if (!parsed.length) return;
+
+  if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+    parsed.forEach(({ el, target, suffix }) => { el.textContent = `${target}${suffix}`; });
+    return;
+  }
+
+  const observer = new IntersectionObserver((entries) => {
+    entries.forEach((entry) => {
+      if (entry.isIntersecting) {
+        parsed.forEach(({ el, target, suffix }, i) => {
+          setTimeout(() => animateCounter(el, target, suffix), i * 150); // stagger
+        });
+        observer.disconnect();
+      }
+    });
+  }, { threshold: 0.3 });
+
+  observer.observe(block);
+}
+</code></pre><h4 id="3d-css-only-animations">3d. CSS-Only Animations</h4><p><strong>File:</strong> Block CSS or <code>lazy-styles.css</code></p><p>For hover effects, entry animations, and pure CSS transitions — recreate directly in CSS:</p><pre><code class="language-css">/* Hover lift effect */
+.cards li {
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+.cards li:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 8px 24px rgb(0 0 0 / 12%);
+}
+
+/* Entry animation (add class via JS after load) */
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+.animate-in {
+  animation: fadeInUp 0.6s ease-out forwards;
+}
+
+/* Focus-visible transitions (Pattern D — always preserve for a11y) */
+.cards li a:focus-visible {
+  outline: 2px solid var(--link-color);
+  outline-offset: 2px;
+  transition: outline-offset 0.2s ease;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .cards li { transition: none; }
+  .animate-in { animation: none; opacity: 1; transform: none; }
+  /* NOTE: Do NOT disable :focus-visible transitions — they are functional, not decorative */
+}
+</code></pre><p><strong>Layout-thrash warning:</strong> Never animate properties that trigger layout recalculation (<code>width</code>, <code>height</code>, <code>top</code>, <code>left</code>, <code>margin</code>, <code>padding</code>). Instead, use <code>transform</code> (translate, scale, rotate) and <code>opacity</code> — these run on the compositor thread and produce smooth 60fps animations.</p><h4 id="3e-parallax-effects">3e. Parallax Effects</h4><p><strong>File:</strong> <code>scripts/scripts.js</code> or block JS</p><pre><code class="language-javascript">function initParallax(main) {
+  if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+
+  const parallaxElements = main.querySelectorAll('[data-parallax]');
+  if (!parallaxElements.length) return;
+
+  const observer = new IntersectionObserver((entries) => {
+    entries.forEach((entry) => {
+      if (entry.isIntersecting) {
+        entry.target.classList.add('parallax-active');
+      } else {
+        entry.target.classList.remove('parallax-active');
+      }
+    });
+  }, { rootMargin: '100px' });
+
+  parallaxElements.forEach((el) => observer.observe(el));
+
+  // Use requestAnimationFrame for smooth parallax
+  let ticking = false;
+  window.addEventListener('scroll', () => {
+    if (!ticking) {
+      requestAnimationFrame(() => {
+        parallaxElements.forEach((el) => {
+          if (!el.classList.contains('parallax-active')) return;
+          const rect = el.getBoundingClientRect();
+          const speed = parseFloat(el.dataset.parallax) || 0.3;
+          const yOffset = (rect.top - window.innerHeight / 2) * speed;
+          el.style.transform = `translateY(${yOffset}px)`;
+        });
+        ticking = false;
+      });
+      ticking = true;
+    }
+  }, { passive: true });
+}
+</code></pre><h3 id="phase-4-integration">Phase 4: Integration</h3><p><strong>Goal:</strong> Place all animation code in the correct EDS file locations.</p><p><strong>File placement rules:</strong></p>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div class="animation-type"><div><div>Scroll-reveal init</div><div><code>scripts/scripts.js</code> → <code>loadLazy()</code></div><div>Lazy</div></div><div><div>Scroll-reveal CSS</div><div><code>styles/lazy-styles.css</code></div><div>Lazy</div></div><div><div>Lottie library loader</div><div><code>scripts/delayed.js</code></div><div>Delayed (1.5s)</div></div><div><div>Lottie container CSS</div><div><code>styles/lazy-styles.css</code></div><div>Lazy</div></div><div><div>Lottie container creation</div><div>Block JS (e.g., <code>blocks/hero/hero.js</code>)</div><div>Eager/Lazy</div></div><div><div>Counter animations</div><div>Block JS (e.g., <code>blocks/cards/cards.js</code>)</div><div>Lazy</div></div><div><div>Block-specific hover CSS</div><div>Block CSS (e.g., <code>blocks/cards/cards.css</code>)</div><div>With block</div></div><div><div>Global keyframes</div><div><code>styles/lazy-styles.css</code></div><div>Lazy</div></div><div><div>Parallax init</div><div><code>scripts/scripts.js</code> → <code>loadLazy()</code></div><div>Lazy</div></div></div><p><strong>Integration checklist:</strong></p><ul class="contains-task-list">
+<li class="task-list-item"><input type="checkbox" disabled> All animations respect <code>prefers-reduced-motion: reduce</code></li>
+<li class="task-list-item"><input type="checkbox" disabled> No animations on first section during <code>loadEager</code> (protects LCP)</li>
+<li class="task-list-item"><input type="checkbox" disabled> Lottie loaded via <code>delayed.js</code> (not blocking)</li>
+<li class="task-list-item"><input type="checkbox" disabled> IntersectionObserver used instead of scroll listeners where possible</li>
+<li class="task-list-item"><input type="checkbox" disabled> No external animation libraries except <code>lottie-web</code> (loaded from CDN)</li>
+<li class="task-list-item"><input type="checkbox" disabled> All CSS animations have reduced-motion fallbacks</li>
+<li class="task-list-item"><input type="checkbox" disabled> Content is visible and functional without animations (progressive enhancement)</li>
+</ul><h3 id="phase-5-verification">Phase 5: Verification</h3><p><strong>Goal:</strong> Visually confirm all animations work correctly and record results in an EDS-readable format.</p><p><strong>Full verification criteria and EDS output format:</strong> See <a href="./animation-verification.md">animation-verification.md</a> for criterion IDs (e.g. A-DOM, F-RENDER), pass/fail conditions per pattern, and how to output verification results as metadata blocks, table blocks, or JSON so EDS can read them.</p><ol>
+<li>
+<p><strong>Navigate to local preview</strong> at <code>http://localhost:3000/content/{page}</code></p>
+</li>
+<li>
+<p><strong>Take viewport screenshot</strong> — verify first section renders without animation artifacts</p>
+</li>
+<li>
+<p><strong>Wait for delayed.js</strong> (1.5s+) — if Lottie is used, wait and verify SVG renders</p>
+</li>
+<li>
+<p><strong>Scroll through page</strong> incrementally (400px steps, 200ms delay) — verify:</p>
+<ul>
+<li>Scroll-reveal sections fade in as they enter viewport</li>
+<li>Counter animations trigger and count to final values</li>
+<li>Parallax effects move at expected rates</li>
+<li>No layout shift or jank</li>
+</ul>
+</li>
+<li>
+<p><strong>Check console for errors</strong> — ensure no animation-related errors</p>
+</li>
+<li>
+<p><strong>Compare with source</strong> — take screenshots at matching scroll positions and compare:</p>
+<ul>
+<li>Same animation types present</li>
+<li>Similar timing and easing</li>
+<li>Same visual effect (fade, slide, scale, etc.)</li>
+<li>Comparable visual fidelity</li>
+</ul>
+</li>
+<li>
+<p><strong>Test reduced motion</strong> — verify <code>prefers-reduced-motion</code> behavior:</p>
+<ul>
+<li>Animations should be disabled or show final state immediately</li>
+<li>No flickering or layout issues with motion disabled</li>
+</ul>
+</li>
+</ol><h2 id="troubleshooting">Troubleshooting</h2><h3 id="common-issues">Common Issues</h3><p><strong>Lottie not rendering:</strong></p><ul>
+<li>Check that <code>delayed.js</code> is imported in <code>scripts.js</code> via <code>loadDelayed()</code></li>
+<li>Verify the JSON file path is correct and accessible</li>
+<li>Check for CORS issues if loading from CDN</li>
+<li>Ensure the container has non-zero dimensions</li>
+</ul><p><strong>Scroll-reveal not triggering:</strong></p><ul>
+<li>Verify <code>initScrollReveal()</code> is called in <code>loadLazy()</code></li>
+<li>Check that <code>threshold</code> and <code>rootMargin</code> values allow triggering</li>
+<li>Programmatic <code>scrollTo</code> doesn't trigger IO for intermediate elements — use incremental scrolling for testing</li>
+</ul><p><strong>Counter showing wrong values:</strong></p><ul>
+<li>Check regex matches the numeric format (integers, decimals, suffixes)</li>
+<li>Verify <code>parseFloat</code> handles the value correctly</li>
+<li>Ensure IO threshold allows the block to trigger</li>
+</ul><p><strong>DA mangles animation file paths:</strong></p><ul>
+<li>DA converts dots to hyphens in URLs (<code>.json</code> → <code>-json</code>)</li>
+<li>Always match Lottie links by <strong>text content</strong> (<code>a.textContent.trim().endsWith('.json')</code>) not by href</li>
+<li>Use the link text as the canonical path, not the href</li>
+</ul><p><strong>Animation appears on local but not remote:</strong></p><ul>
+<li>Verify all code files are committed and pushed</li>
+<li>Check that DA content includes the animation trigger (e.g., Lottie link in hero)</li>
+<li>Verify the animation JSON file is accessible at the expected path on the remote</li>
+</ul><h2 id="examples">Examples</h2><h3 id="zeliscom-homepage-reference-implementation">Zelis.com Homepage (Reference Implementation)</h3><p><strong>Source:</strong> https://www.zelis.com/</p><p><strong>Animations detected and recreated:</strong></p><ol>
+<li>
+<p><strong>Hero Lottie</strong> — <code>&#x3C;lottie-player></code> with <code>HomepageHero-Main-tinified.json</code></p>
+<ul>
+<li>Recreated: <code>lottie-web</code> via <code>delayed.js</code>, link-based DA authoring in <code>hero.js</code></li>
+<li>Files: <code>blocks/hero/hero.js</code>, <code>scripts/delayed.js</code>, <code>animations/hero-animation.json</code></li>
+</ul>
+</li>
+<li>
+<p><strong>Scroll-reveal sections</strong> — Below-fold sections fade in on scroll</p>
+<ul>
+<li>Recreated: <code>IntersectionObserver</code> + <code>.scroll-reveal</code> / <code>.is-visible</code> class toggle</li>
+<li>Files: <code>scripts/scripts.js</code> (<code>initScrollReveal</code>), <code>styles/lazy-styles.css</code></li>
+</ul>
+</li>
+<li>
+<p><strong>Counter animations</strong> — Stats section (750+, 850k+, 120M) count up from zero</p>
+<ul>
+<li>Recreated: <code>requestAnimationFrame</code> with ease-out cubic + <code>IntersectionObserver</code></li>
+<li>Files: <code>blocks/cards/cards.js</code> (<code>animateCounter</code>, <code>initStatsCounters</code>)</li>
+</ul>
+</li>
+</ol></div>

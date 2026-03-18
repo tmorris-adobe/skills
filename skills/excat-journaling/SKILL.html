@@ -1,0 +1,500 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta name="viewport" content="width=device-width, initial-scale=1"/>
+<script src="/scripts/aem.js" type="module"></script>
+<script src="/scripts/scripts.js" type="module"></script>
+<link rel="stylesheet" href="/styles/styles.css"/>
+<link rel="preload" as="font" type="font/woff2" href="/fonts/avenir/avenir_next_lt_pro_regular.woff2" crossorigin>
+<link rel="preload" as="font" type="font/woff2" href="/fonts/avenir/avenir_next_lt_pro_medium.woff2" crossorigin>
+</head>
+<body>
+<header></header>
+<main>
+<div><h2 id="name-excat-journalingdescription-maintain-a-running-project-journal-that-tracks-sessions-actions-taken-successfailure-rates-problems-encountered-resolutions-and-time-spent-provides-rapid-context-recovery-between-sessions-invoke-when-user-says-journal-log-session-update-journal-what-did-we-do-last-where-did-we-leave-off-session-summary-or-at-the-startend-of-any-work-session">name: excat-journaling
+description: Maintain a running project journal that tracks sessions, actions taken, success/failure rates, problems encountered, resolutions, and time spent. Provides rapid context recovery between sessions. Invoke when user says "journal", "log session", "update journal", "what did we do last", "where did we leave off", "session summary", or at the start/end of any work session.</h2><h1 id="execution-mindset">EXECUTION MINDSET</h1><p><strong>You are a meticulous RECORD-KEEPER. Your job is to maintain an accurate, useful project journal that enables rapid context recovery between sessions.</strong></p><ul>
+<li>DO: Record every significant action, outcome, and decision</li>
+<li>DO: Track time spent and attempts needed for each task</li>
+<li>DO: Note problems encountered and how they were resolved</li>
+<li>DO: Write entries that your future self can scan quickly for context</li>
+<li>DON'T: Write vague summaries — be specific about files, commits, and outcomes</li>
+<li>DON'T: Skip recording failures — they're as important as successes</li>
+<li>DON'T: Editorialize — state facts, not opinions about difficulty</li>
+</ul><p><strong>Your output should be a clear, scannable project history that any session can pick up and continue from.</strong></p></div>
+<div><h1 id="project-journaling-skill">Project Journaling Skill</h1><h2 id="rules">Rules</h2><p>These rules are non-negotiable. They protect journal integrity across sessions:</p><ol>
+<li>
+<p><strong>Append-only history.</strong> Never remove, rewrite, or edit past session entries. If a past entry contains an error, add a correction note in the <em>current</em> session — don't modify the original.</p>
+</li>
+<li>
+<p><strong>Same-session updates.</strong> While a session is active, you may update the <em>current</em> session entry (add actions, fill in outcomes, update carry-forward). Once a session is closed and a new one starts, the old session is frozen.</p>
+</li>
+<li>
+<p><strong>Keep Carry-Forward current.</strong> The Carry-Forward section of the <em>most recent</em> session entry must always reflect the true next step. Update it whenever priorities shift during the session.</p>
+</li>
+<li>
+<p><strong>One active session at a time.</strong> Never have two open session entries. Close the current session before starting a new one.</p>
+</li>
+<li>
+<p><strong>Be specific, not vague.</strong> Write file names, function names, commit hashes, and error messages — not "fixed the thing" or "updated some files."</p>
+</li>
+<li>
+<p><strong>Record failures equally.</strong> Failed attempts and dead ends are valuable context. Don't skip them.</p>
+</li>
+<li>
+<p><strong>Be concise.</strong> Short bullets and one-line resolutions. Avoid long prose in journal entries — save narrative for Key Decisions where rationale matters.</p>
+</li>
+</ol><h2 id="purpose">Purpose</h2><p>Maintain a structured, running journal for any project that tracks session activity, task outcomes, problems, resolutions, and time investment. The journal serves as the primary context-recovery mechanism between sessions, enabling any new session to quickly understand: what was done, what's pending, what problems exist, and where to resume work.</p><h2 id="portability">Portability</h2><p>This skill is <strong>project-agnostic</strong>. The SKILL.md contains the instructions and schema; the actual journal data lives in a configurable journal directory. To port this skill to a new project:</p><ol>
+<li>Copy the <code>skills/excat-journaling/</code> directory (includes <code>SKILL.md</code> and <code>journal-format.md</code>)</li>
+<li>The skill will create the journal directory on first use</li>
+<li>All project-specific data stays in the journal directory, not in the skill</li>
+</ol><h3 id="journal-path-convention">Journal Path Convention</h3><p>The default journal path is <code>{workspace-root}/journal/</code>. To override:</p><ul>
+<li>Set <code>JOURNAL_DIR</code> in your project's <code>.env</code> or workspace config</li>
+<li>Or create a <code>journal-config.yaml</code> in the skill directory with:
+<pre><code class="language-yaml">journal_dir: /path/to/custom/journal
+</code></pre>
+</li>
+<li>If neither is set, the skill uses <code>/workspace/journal/</code></li>
+</ul><p>The portable template <code>journal-format.md</code> (in the skill directory) serves as a quick reference for the entry schema without needing to read the full SKILL.md.</p><h2 id="file-structure">File Structure</h2><pre><code>/workspace/journal/
+├── journal.md              # The running journal (append-only)
+├── journal-index.md        # Quick-reference index of all sessions
+├── project-context.md      # High-level project state (updated each session)
+└── metrics.md              # Cumulative time and success metrics
+</code></pre><h3 id="file-purposes">File Purposes</h3>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div class="file"><div><div><code>journal.md</code></div><div>Detailed session-by-session log with all actions, outcomes, timings</div><div>Every action within a session</div></div><div><div><code>journal-index.md</code></div><div>One-line summary per session for fast scanning</div><div>End of each session</div></div><div><div><code>project-context.md</code></div><div>Current project state snapshot: what's done, what's pending, active blockers</div><div>End of each session (overwritten)</div></div><div><div><code>metrics.md</code></div><div>Cumulative statistics: total time, success rates, common issues</div><div>End of each session</div></div></div><h2 id="journal-entry-schema">Journal Entry Schema</h2><p>Each session entry in <code>journal.md</code> follows this structure:</p><pre><code class="language-markdown">---
+
+## Session [NNN] — [YYYY-MM-DD] [HH:MM–HH:MM] — [Brief Title]
+
+**Branch:** `[git-branch-name]`
+**Duration:** [estimated-time] (agent) + [margin]% user overhead = [total-estimate]
+**Session goal:** [What was the user trying to accomplish]
+
+### Actions
+
+| # | Action | Pattern | Attempts | Result | Time (est.) |
+|---|--------|---------|----------|--------|-------------|
+| 1 | [What was done] | [new/retry/continuation] | [N] | [pass/fail/partial] | [Xm] |
+| 2 | ... | ... | ... | ... | ... |
+
+### Outcomes
+- **Completed:** [List of things finished this session]
+- **Partial:** [Things started but not finished, with state description]
+- **Deferred:** [Things identified but intentionally postponed]
+
+### Problems Encountered
+
+| Problem | Severity | Resolved? | Resolution | Related Action # |
+|---------|----------|-----------|------------|-----------------|
+| [Description] | [blocker/major/minor] | [yes/no/workaround] | [How it was fixed] | [#N] |
+
+### Key Decisions
+- [Decision made and rationale, if any non-obvious choices were made]
+
+### Files Changed
+- `[path/to/file]` — [what changed and why]
+
+### Commits
+- `[short-hash]` — [commit message summary]
+
+### Carry-Forward
+> [What the next session should know and where to start]
+</code></pre><p><strong>Notes on the schema:</strong></p><ul>
+<li>The <code>[HH:MM–HH:MM]</code> time range in the header is optional but recommended when known</li>
+<li>The Actions table is the default format for detailed sessions. For quick sessions (&#x3C; 5 actions, all straightforward), you may use <strong>bullet format</strong> instead:</li>
+</ul><pre><code class="language-markdown">### Actions
+- [x] Action description (~Xm) — pass
+- [x] Action description (~Xm) — pass, 2 attempts
+- [ ] Action description — deferred
+</code></pre><p>Use table format when actions involve retries, multiple patterns, or you need the granularity. Use bullet format for simple, linear sessions. Don't mix formats within a single session.</p><h2 id="time-tracking">Time Tracking</h2><h3 id="estimation-rules">Estimation Rules</h3><p>Time is tracked per-action using these estimation guidelines:</p>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div class="action-type"><div><div>File read/analysis</div><div>1–2 min</div><div>Reading a file, reviewing code structure</div></div><div><div>Simple edit</div><div>2–3 min</div><div>Fixing a typo, updating a reference, small CSS change</div></div><div><div>Code generation</div><div>5–15 min</div><div>Writing a new function, creating a block, building a component</div></div><div><div>Complex implementation</div><div>15–45 min</div><div>Multi-file feature, new block with JS+CSS, migration workflow</div></div><div><div>Debugging/troubleshooting</div><div>10–30 min</div><div>Investigating a rendering issue, fixing a broken integration</div></div><div><div>Research/exploration</div><div>5–15 min</div><div>Searching codebase, reading docs, exploring block library</div></div><div><div>Conversion/generation</div><div>3–5 min</div><div>Markdown to HTML, generating document paths</div></div><div><div>Git operations</div><div>1–2 min</div><div>Staging, committing, pushing</div></div><div><div>Visual verification</div><div>3–5 min</div><div>Screenshot, preview, visual comparison</div></div></div><h3 id="user-overhead-margin">User Overhead Margin</h3><p>Every session total includes a <strong>user overhead margin</strong> (5%–15%) to account for:</p><ul>
+<li>User reading and reviewing outputs</li>
+<li>User thinking about next steps between actions</li>
+<li>User providing input or making decisions</li>
+<li>Context switching and interruptions</li>
+<li>Session startup/shutdown</li>
+</ul><p><strong>Margin selection:</strong></p><ul>
+<li><strong>5%</strong> — Highly autonomous session, minimal user interaction (e.g., bulk operations)</li>
+<li><strong>10%</strong> — Typical session with moderate user direction</li>
+<li><strong>15%</strong> — Exploratory session with frequent user decisions and discussion</li>
+</ul><p>The margin is applied to the total agent time: <code>total = agent_time × (1 + margin)</code></p><h2 id="workflow">Workflow</h2><h3 id="when-to-journal">When to Journal</h3><p>The skill activates at these trigger points:</p><ol>
+<li><strong>Session start</strong> — Read <code>project-context.md</code> and recent <code>journal.md</code> entries to recover context</li>
+<li><strong>During session</strong> — Append actions to the current session entry as work progresses</li>
+<li><strong>Session end</strong> — Finalize the session entry, update index, update project context, update metrics</li>
+<li><strong>On request</strong> — User asks "where did we leave off?", "what did we do?", "update the journal", etc.</li>
+</ol><h3 id="phase-1-session-open">Phase 1: Session Open</h3><p><strong>Goal:</strong> Recover context and begin a new session entry.</p><p><strong>Steps:</strong></p><ol>
+<li>
+<p><strong>Check for existing journal:</strong></p>
+<pre><code>/workspace/journal/journal.md     — exists?
+/workspace/journal/project-context.md — exists?
+</code></pre>
+</li>
+<li>
+<p><strong>If journal exists:</strong> Read <code>project-context.md</code> for current state, then read the last 1–2 sessions from <code>journal.md</code> for recent context.</p>
+</li>
+<li>
+<p><strong>If no journal:</strong> Initialize the journal directory and files (see Phase 4: Initialization).</p>
+</li>
+<li>
+<p><strong>Start new session entry:</strong> Append a new session header to <code>journal.md</code> with:</p>
+<ul>
+<li>Session number (increment from last)</li>
+<li>Today's date</li>
+<li>Current git branch</li>
+<li>Session goal (from user's first request or inferred from context)</li>
+</ul>
+</li>
+</ol><h3 id="phase-2-during-session">Phase 2: During Session</h3><p><strong>Goal:</strong> Record actions as they happen.</p><p><strong>Steps:</strong></p><ol>
+<li>
+<p><strong>After each significant action</strong>, append a row to the current session's Actions table:</p>
+<ul>
+<li>Action number (sequential within session)</li>
+<li>What was done (specific — include file names, function names, block names)</li>
+<li>Pattern: <code>new</code> (first attempt), <code>retry</code> (re-attempting something that failed), <code>continuation</code> (picking up incomplete work)</li>
+<li>Number of attempts before success (1 if first try worked)</li>
+<li>Result: <code>pass</code> (fully successful), <code>fail</code> (did not work), <code>partial</code> (partially worked)</li>
+<li>Estimated time</li>
+</ul>
+</li>
+<li>
+<p><strong>When a problem is encountered</strong>, add it to the Problems table:</p>
+<ul>
+<li>Description of what went wrong</li>
+<li>Severity: <code>blocker</code> (can't continue), <code>major</code> (significant impediment), <code>minor</code> (inconvenience)</li>
+<li>Whether it was resolved</li>
+<li>How it was resolved (if applicable)</li>
+<li>Which action number it relates to</li>
+</ul>
+</li>
+<li>
+<p><strong>When a decision is made</strong>, note it in Key Decisions:</p>
+<ul>
+<li>What was decided and why</li>
+<li>Only for non-obvious choices (don't log "decided to use standard EDS patterns")</li>
+</ul>
+</li>
+</ol><h3 id="phase-3-session-close">Phase 3: Session Close</h3><p><strong>Goal:</strong> Finalize the session record and update derived files.</p><p><strong>Steps:</strong></p><ol>
+<li>
+<p><strong>Complete the session entry</strong> in <code>journal.md</code>:</p>
+<ul>
+<li>Fill in Outcomes (completed, partial, deferred)</li>
+<li>Fill in Files Changed</li>
+<li>Fill in Commits</li>
+<li>Write the Carry-Forward note</li>
+<li>Calculate total duration with user margin</li>
+</ul>
+</li>
+<li>
+<p><strong>Update <code>journal-index.md</code></strong> — Append one line:</p>
+<pre><code class="language-markdown">| [NNN] | [YYYY-MM-DD] | [Brief title] | [duration] | [X completed, Y partial, Z problems] |
+</code></pre>
+</li>
+<li>
+<p><strong>Overwrite <code>project-context.md</code></strong> with current state:</p>
+<pre><code class="language-markdown"># Project Context — [Project Name]
+**Last updated:** [YYYY-MM-DD] (Session [NNN])
+**Branch:** `[branch]`
+**Overall status:** [one-line summary]
+
+## What's Done
+- [Completed items with references to sessions]
+
+## What's In Progress
+- [Partially completed items with current state]
+
+## What's Pending
+- [Known upcoming work]
+
+## Active Blockers
+- [Anything preventing progress]
+
+## Key Files
+- [Important files and their roles in the project]
+
+## Resume Point
+> [Exactly where the next session should begin]
+</code></pre>
+</li>
+<li>
+<p><strong>Update <code>metrics.md</code></strong> with cumulative stats:</p>
+<pre><code class="language-markdown"># Project Metrics
+
+## Time
+- **Total sessions:** [N]
+- **Total agent time:** [Xh Ym]
+- **Total with user margin:** [Xh Ym]
+- **Average session length:** [Xm]
+
+## Success Rates
+- **Actions attempted:** [N]
+- **First-try success:** [N] ([%])
+- **Required retry:** [N] ([%])
+- **Failed:** [N] ([%])
+
+## Problems
+- **Total encountered:** [N]
+- **Resolved:** [N] ([%])
+- **Unresolved:** [N]
+- **Most common category:** [category]
+</code></pre>
+</li>
+</ol><h3 id="phase-4-initialization">Phase 4: Initialization</h3><p><strong>Goal:</strong> Set up the journal for a new project.</p><p>Run this when no journal exists:</p><ol>
+<li>
+<p><strong>Create directory:</strong> <code>/workspace/journal/</code></p>
+</li>
+<li>
+<p><strong>Create <code>journal.md</code>:</strong></p>
+<pre><code class="language-markdown"># Project Journal — [Project Name]
+
+> Running log of all sessions, actions, outcomes, and time tracking.
+> Each session is appended chronologically. Read from bottom for most recent.
+
+---
+</code></pre>
+</li>
+<li>
+<p><strong>Create <code>journal-index.md</code>:</strong></p>
+<pre><code class="language-markdown"># Session Index
+
+| Session | Date | Summary | Duration | Outcomes |
+|---------|------|---------|----------|----------|
+</code></pre>
+</li>
+<li>
+<p><strong>Create <code>project-context.md</code>:</strong></p>
+<pre><code class="language-markdown"># Project Context — [Project Name]
+**Last updated:** [YYYY-MM-DD] (Session 001)
+**Branch:** `[branch]`
+**Overall status:** Project initialized
+
+## What's Done
+- (none yet)
+
+## What's In Progress
+- (none yet)
+
+## What's Pending
+- [Initial goals if known]
+
+## Active Blockers
+- (none)
+
+## Key Files
+- (to be populated)
+
+## Resume Point
+> Begin first working session.
+</code></pre>
+</li>
+<li>
+<p><strong>Create <code>metrics.md</code>:</strong></p>
+<pre><code class="language-markdown"># Project Metrics
+
+## Time
+- **Total sessions:** 0
+- **Total agent time:** 0h 0m
+- **Total with user margin:** 0h 0m
+- **Average session length:** —
+
+## Success Rates
+- **Actions attempted:** 0
+- **First-try success:** 0 (—)
+- **Required retry:** 0 (—)
+- **Failed:** 0 (—)
+
+## Problems
+- **Total encountered:** 0
+- **Resolved:** 0 (—)
+- **Unresolved:** 0
+- **Most common category:** —
+</code></pre>
+</li>
+</ol><h2 id="backfill-protocol">Backfill Protocol</h2><p>When this skill is added to an existing project (like this one), create a <strong>backfill session</strong> (Session 000) that summarizes all prior work. Use git log, existing files, and conversation context to reconstruct:</p><ul>
+<li>Major milestones reached</li>
+<li>Key files created/modified</li>
+<li>Known issues and their resolution status</li>
+<li>Approximate total time invested</li>
+</ul><p>Mark backfill entries with <code>[BACKFILL]</code> so they're clearly distinguished from real-time entries.</p><h2 id="example-sessions">Example Sessions</h2><h3 id="minimal-session-bullet-format">Minimal Session (bullet format)</h3><pre><code class="language-markdown">---
+
+## Session 005 — 2026-03-01 14:00–14:30 — Fix broken hero image
+
+**Branch:** `fix/hero-image`
+**Duration:** 20m (agent) + 10% = 22m
+**Session goal:** Fix hero image not loading on homepage
+
+### Actions
+- [x] Investigate hero block rendering — found missing alt attribute causing CLS (~3m) — pass
+- [x] Fix hero.css to handle missing image gracefully (~5m) — pass
+- [x] Verify fix in local preview (~3m) — pass
+- [x] Commit fix as `a1b2c3d` (~1m) — pass
+
+### Outcomes
+- **Completed:** Hero image rendering fix, CSS fallback for missing images
+
+### Problems Encountered
+(none)
+
+### Carry-Forward
+> Hero fix committed on `fix/hero-image`. Ready to merge to main. No other open issues.
+</code></pre><h3 id="session-with-problems-table-format">Session with Problems (table format)</h3><pre><code class="language-markdown">---
+
+## Session 008 — 2026-03-05 09:00–11:15 — Migrate pricing page
+
+**Branch:** `issue-12-pricing-page`
+**Duration:** 1h 45m (agent) + 15% = 2h 1m
+**Session goal:** Migrate pricing page from source site to EDS
+
+### Actions
+
+| # | Action | Pattern | Attempts | Result | Time (est.) |
+|---|--------|---------|----------|--------|-------------|
+| 1 | Scrape pricing page and identify sections | new | 1 | pass | 10m |
+| 2 | Map content to EDS blocks (cards, columns, accordion) | new | 1 | pass | 15m |
+| 3 | Generate pricing-page.md with block tables | new | 2 | pass | 20m |
+| 4 | Convert to HTML and preview | new | 1 | partial | 5m |
+| 5 | Debug accordion block not rendering | new | 3 | pass | 30m |
+| 6 | Fix pricing card alignment CSS | new | 1 | pass | 15m |
+| 7 | Final preview verification and commit | new | 1 | pass | 10m |
+
+### Outcomes
+- **Completed:** Pricing page migrated, accordion block fixed, visual parity achieved
+- **Deferred:** Mobile responsive tweaks (identified but out of scope for this session)
+
+### Problems Encountered
+
+| Problem | Severity | Resolved? | Resolution | Related Action # |
+|---------|----------|-----------|------------|-----------------|
+| Accordion block JS not loading — missing `decorate` export | major | yes | Added `export default function decorate(block)` to accordion.js | #5 |
+| First markdown generation had malformed table (missing pipe) | minor | yes | Regenerated with corrected table syntax | #3 |
+
+### Key Decisions
+- Used `cards` block for pricing tiers instead of custom `pricing-table` block — simpler authoring, acceptable visual match
+
+### Files Changed
+- `content/pricing.md` — New pricing page content
+- `content/pricing.html` — Generated HTML for preview
+- `blocks/accordion/accordion.js` — Fixed missing decorate export
+- `styles/styles.css` — Added pricing card alignment rules
+
+### Commits
+- `f4e5d6c` — Migrate pricing page with accordion fix
+
+### Carry-Forward
+> Pricing page is live on branch. Mobile responsiveness needs attention (cards stack poorly below 768px). Next priority: migrate the "About Us" page or address mobile CSS.
+</code></pre><h2 id="reading-the-journal">Reading the Journal</h2><h3 id="quick-context-recovery-start-of-session">Quick Context Recovery (start of session)</h3><p>This is your <strong>default entry point</strong> at the beginning of every session. It should take under 60 seconds:</p><ol>
+<li>Read <code>project-context.md</code> — gives you current state: what's done, what's pending, active blockers</li>
+<li>Read last entry's <strong>Carry-Forward</strong> section in <code>journal.md</code> — tells you exactly where to resume</li>
+<li>You're ready to work. Start a new session entry.</li>
+</ol><p>Only read more if the carry-forward is unclear or the user asks about history.</p><h3 id="deep-context-recovery-unfamiliar-with-project">Deep Context Recovery (unfamiliar with project)</h3><p>Use this when you need to understand the full project arc (new contributor, long gap between sessions, etc.):</p><ol>
+<li>Read <code>project-context.md</code> for current state</li>
+<li>Scan <code>journal-index.md</code> for session timeline — identify sessions relevant to your current task</li>
+<li>Read specific sessions in <code>journal.md</code> for detailed history</li>
+<li>Check <code>metrics.md</code> for overall project health (success rates, common problem categories)</li>
+</ol><h3 id="problem-history">Problem History</h3><p>Search <code>journal.md</code> for the Problems tables to find:</p><ul>
+<li>Recurring issues (same problem across sessions)</li>
+<li>Unresolved blockers</li>
+<li>Resolution patterns that worked</li>
+<li>Categories of problems (check <code>metrics.md</code> for the most common category)</li>
+</ul><h2 id="troubleshooting">Troubleshooting</h2><p><strong>Journal files missing or corrupted:</strong></p><ul>
+<li>Re-initialize using Phase 4, then backfill from git log</li>
+<li>Git history is the source of truth; the journal is a convenience layer</li>
+</ul><p><strong>Session numbers out of sync:</strong></p><ul>
+<li>Check <code>journal-index.md</code> for the latest session number</li>
+<li>If index is missing, count <code>## Session</code> headers in <code>journal.md</code></li>
+</ul><p><strong>Time estimates seem off:</strong></p><ul>
+<li>Adjust the base estimates table for your project's complexity</li>
+<li>Track actual vs. estimated in a few sessions to calibrate</li>
+</ul><p><strong>Journal too large to read:</strong></p><ul>
+<li>Use <code>project-context.md</code> and <code>journal-index.md</code> for quick context</li>
+<li>Only read specific session entries when you need detail</li>
+<li>Consider archiving old sessions to <code>journal-archive.md</code> after 50+ sessions</li>
+</ul><p><strong>Metrics drift from journal:</strong></p><ul>
+<li>If metrics.md numbers don't match what's in journal.md, recount from the journal — journal.md is the source of truth</li>
+<li>Metrics.md is a derived convenience file, not an authoritative record</li>
+</ul></div>
+<div><p><em>Journaling Skill v1.1 — Merged from excat-journaling v1.0 + journaling-cursor best practices</em></p></div>
+</main>
+<footer></footer>
+</body>
+</html>

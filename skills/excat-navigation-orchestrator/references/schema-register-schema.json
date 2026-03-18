@@ -1,0 +1,23 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Schema Register",
+  "description": "Per-component schema match (source vs migrated). EVERY individual item from phase-1/2/3 must be listed: each row, each element within a row, megamenu, each column, each sub-menu. status=validated ONLY when sourceMatch=true. allValidated MUST be false if ANY item has status=pending or sourceMatch=false. Do NOT proceed while allValidated=false.",
+  "type": "object",
+  "required": ["items", "allValidated"],
+  "properties": {
+    "items": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["id", "label", "status", "sourceMatch"],
+        "properties": {
+          "id": { "type": "string", "description": "Unique ID derived from phase JSON. Examples: row-0, row-0-logo, row-0-nav-links, row-0-cta, megamenu, megamenu-column-0, megamenu-column-0-submenu-0" },
+          "label": { "type": "string" },
+          "status": { "type": "string", "enum": ["pending", "validated"], "description": "validated ONLY when sourceMatch=true" },
+          "sourceMatch": { "type": "boolean", "description": "true if source and migrated match for this specific item" }
+        }
+      }
+    },
+    "allValidated": { "type": "boolean", "description": "true ONLY when every item has status=validated. Do NOT set true otherwise." }
+  }
+}
