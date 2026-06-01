@@ -1,0 +1,16 @@
+{
+  "version": 1,
+  "hooks": {
+    "sessionStart": [
+      {
+        "command": "node hooks/project-tracking/excat-session-start.js"
+      }
+    ],
+    "stop": [
+      {
+        "command": "node hooks/project-tracking/excat-session-close.js",
+        "loop_limit": 1
+      }
+    ]
+  }
+}
