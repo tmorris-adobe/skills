@@ -1,12 +1,10 @@
 #!/usr/bin/env node
 
 /**
- * Journal Reminder Hook (Stop event)
+ * DEPRECATED — use hooks/project-tracking/excat-session-close.js
  *
- * Checks whether the journaling skill was run during this session by looking
- * for recent modifications to journal/journal.md. If the journal wasn't
- * updated, outputs a reminder message asking the agent to run the journaling
- * skill before the session ends.
+ * Journal Reminder Hook (Stop event) — legacy Claude Code hook.
+ * Superseded by cross-platform hooks in hooks/project-tracking/.
  */
 
 const fs = require('fs');
